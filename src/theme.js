@@ -139,7 +139,7 @@ export function applyDocumentTheme() {
   }
   meta.setAttribute(
     'content',
-    theme === 'dark' ? '#1e1c18' : '#faf7f0',
+    theme === 'dark' ? '#1e1c18' : '#0f0e0d',
   )
 
   notifyThemeApplied()
