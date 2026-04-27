@@ -1,60 +1,183 @@
 import './style.css'
-import javascriptLogo from './assets/javascript.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import { setupCounter } from './counter.js'
+import {
+  getPreference,
+  initThemeFromStorage,
+  onThemeApplied,
+  setThemePreference,
+} from './theme.js'
+import { renderTodoList } from './render.js'
+import { createTodo, loadTodos, saveTodos } from './todos.js'
+import { playCrinkleSound, playPinSound } from './sounds.js'
 
-document.querySelector('#app').innerHTML = `
-<section id="center">
-  <div class="hero">
-    <img src="${heroImg}" class="base" width="170" height="179">
-    <img src="${javascriptLogo}" class="framework" alt="JavaScript logo"/>
-    <img src="${viteLogo}" class="vite" alt="Vite logo" />
-  </div>
-  <div>
-    <h1>Get started</h1>
-    <p>Edit <code>src/main.js</code> and save to test <code>HMR</code></p>
-  </div>
-  <button id="counter" type="button" class="counter"></button>
-</section>
+/** @typedef {import('./todos.js').Todo} Todo */
 
-<div class="ticks"></div>
+/** @type {Todo[]} */
+let todos = loadTodos()
 
-<section id="next-steps">
-  <div id="docs">
-    <svg class="icon" role="presentation" aria-hidden="true"><use href="/icons.svg#documentation-icon"></use></svg>
-    <h2>Documentation</h2>
-    <p>Your questions, answered</p>
-    <ul>
-      <li>
-        <a href="https://vite.dev/" target="_blank">
-          <img class="logo" src="${viteLogo}" alt="" />
-          Explore Vite
-        </a>
-      </li>
-      <li>
-        <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript" target="_blank">
-          <img class="button-icon" src="${javascriptLogo}" alt="">
-          Learn more
-        </a>
-      </li>
-    </ul>
-  </div>
-  <div id="social">
-    <svg class="icon" role="presentation" aria-hidden="true"><use href="/icons.svg#social-icon"></use></svg>
-    <h2>Connect with us</h2>
-    <p>Join the Vite community</p>
-    <ul>
-      <li><a href="https://github.com/vitejs/vite" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#github-icon"></use></svg>GitHub</a></li>
-      <li><a href="https://chat.vite.dev/" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#discord-icon"></use></svg>Discord</a></li>
-      <li><a href="https://x.com/vite_js" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#x-icon"></use></svg>X.com</a></li>
-      <li><a href="https://bsky.app/profile/vite.dev" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#bluesky-icon"></use></svg>Bluesky</a></li>
-    </ul>
-  </div>
-</section>
+initThemeFromStorage()
 
-<div class="ticks"></div>
-<section id="spacer"></section>
-`
+function mount() {
+  const root = document.querySelector('#app')
+  const template = document.querySelector('#todo-item-template')
+  if (!root || !(template instanceof HTMLTemplateElement)) return
 
-setupCounter(document.querySelector('#counter'))
+  root.innerHTML = `
+    <div class="notebook">
+      <header class="notebook-header">
+        <div class="notebook-header-row">
+          <p class="eyebrow">Task Notebook</p>
+          <div
+            class="theme-toolbar"
+            role="group"
+            aria-label="Theme: time of day, day, or night"
+          >
+            <button
+              type="button"
+              class="theme-btn"
+              id="theme-auto"
+              data-theme-pref="auto"
+              title="Match time of day"
+              aria-pressed="false"
+            >
+              <span class="sr-only">Match time of day</span>
+              <svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.75"/>
+                <path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+              </svg>
+            </button>
+            <button
+              type="button"
+              class="theme-btn"
+              id="theme-day"
+              data-theme-pref="light"
+              title="Day — light theme"
+              aria-pressed="false"
+            >
+              <span class="sr-only">Day — light theme</span>
+              <svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.75"/>
+                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+              </svg>
+            </button>
+            <button
+              type="button"
+              class="theme-btn"
+              id="theme-night"
+              data-theme-pref="dark"
+              title="Night — dark theme"
+              aria-pressed="false"
+            >
+              <span class="sr-only">Night — dark theme</span>
+              <svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <h1 class="notebook-title">Today</h1>
+        <p class="lede">Quick capture — warm paper, simple lists.</p>
+      </header>
+
+      <main id="main" class="notebook-main">
+        <form id="todo-form" class="quick-add" aria-label="Add a new task">
+          <label class="sr-only" for="todo-input">Task title</label>
+          <input
+            id="todo-input"
+            name="title"
+            type="text"
+            class="quick-add-input"
+            placeholder="Write a task and press Enter…"
+            autocomplete="off"
+            maxlength="500"
+            required
+          />
+          <button type="submit" class="quick-add-submit">Add</button>
+        </form>
+
+        <section class="list-section" aria-labelledby="list-heading">
+          <h2 id="list-heading" class="list-heading">Tasks</h2>
+          <ul id="todo-list" class="todo-list" role="list"></ul>
+          <p id="todo-empty" class="todo-empty" hidden>No tasks yet — add one above.</p>
+        </section>
+      </main>
+    </div>
+  `
+
+  const form = /** @type {HTMLFormElement} */ (root.querySelector('#todo-form'))
+  const input = /** @type {HTMLInputElement} */ (root.querySelector('#todo-input'))
+  const listEl = /** @type {HTMLUListElement} */ (root.querySelector('#todo-list'))
+  const emptyEl = /** @type {HTMLElement} */ (root.querySelector('#todo-empty'))
+  const themeAuto = /** @type {HTMLButtonElement} */ (root.querySelector('#theme-auto'))
+  const themeDay = /** @type {HTMLButtonElement} */ (root.querySelector('#theme-day'))
+  const themeNight = /** @type {HTMLButtonElement} */ (root.querySelector('#theme-night'))
+
+  function syncThemeToolbar() {
+    const pref = getPreference()
+    themeAuto.setAttribute('aria-pressed', pref === 'auto' ? 'true' : 'false')
+    themeDay.setAttribute('aria-pressed', pref === 'light' ? 'true' : 'false')
+    themeNight.setAttribute('aria-pressed', pref === 'dark' ? 'true' : 'false')
+  }
+
+  syncThemeToolbar()
+  onThemeApplied(syncThemeToolbar)
+
+  root.querySelector('.theme-toolbar')?.addEventListener('click', (e) => {
+    const btn = /** @type {HTMLElement | null} */ (e.target).closest('.theme-btn')
+    if (!(btn instanceof HTMLButtonElement)) return
+    const pref = btn.dataset.themePref
+    if (pref === 'auto' || pref === 'light' || pref === 'dark') {
+      setThemePreference(pref)
+    }
+  })
+
+  function syncEmptyState() {
+    emptyEl.hidden = todos.length > 0
+    listEl.hidden = todos.length === 0
+  }
+
+  function persistAndRender() {
+    saveTodos(todos)
+    renderTodoList(listEl, template, todos)
+    syncEmptyState()
+  }
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault()
+    const title = input.value
+    if (!title.trim()) return
+    todos.push(createTodo(title))
+    input.value = ''
+    playPinSound()
+    persistAndRender()
+    input.focus()
+  })
+
+  listEl.addEventListener('change', (e) => {
+    const target = /** @type {HTMLElement} */ (e.target)
+    if (!(target instanceof HTMLInputElement) || target.type !== 'checkbox') return
+    const id = target.closest('[data-todo-id]')?.getAttribute('data-todo-id')
+    if (!id) return
+    const todo = todos.find((t) => t.id === id)
+    if (!todo) return
+    const wasDone = todo.done
+    todo.done = target.checked
+    if (todo.done && !wasDone) {
+      playCrinkleSound()
+    }
+    persistAndRender()
+  })
+
+  listEl.addEventListener('click', (e) => {
+    const btn = /** @type {HTMLElement} */ (e.target).closest('.todo-delete')
+    if (!(btn instanceof HTMLButtonElement)) return
+    const id = btn.closest('[data-todo-id]')?.getAttribute('data-todo-id')
+    if (!id) return
+    todos = todos.filter((t) => t.id !== id)
+    persistAndRender()
+  })
+
+  persistAndRender()
+  input.focus()
+}
+
+mount()

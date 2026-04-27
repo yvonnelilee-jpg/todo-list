@@ -4,10 +4,46 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>todo-list</title>
+    <meta name="theme-color" content="#faf7f0" />
+    <!-- Match src/theme.js: day window + THEME_PREFERENCE_STORAGE_KEY -->
+    <script>
+      ;(function () {
+        var S = 7,
+          E = 19
+        var KEY = 'task-notebook-theme-preference'
+        var h = new Date().getHours()
+        var clockLight = h >= S && h < E
+        var pref = null
+        try {
+          pref = localStorage.getItem(KEY)
+        } catch (e) {}
+        var light =
+          pref === 'light' ? true : pref === 'dark' ? false : clockLight
+        document.documentElement.dataset.theme = light ? 'light' : 'dark'
+        if (pref === 'light' || pref === 'dark' || pref === 'auto')
+          document.documentElement.dataset.themePreference = pref
+        var m = document.querySelector('meta[name="theme-color"]')
+        if (m) m.setAttribute('content', light ? '#faf7f0' : '#1e1c18')
+      })()
+    </script>
+    <title>Task Notebook</title>
   </head>
   <body>
+    <a class="skip-link" href="#main">Skip to content</a>
     <div id="app"></div>
+
+    <template id="todo-item-template">
+      <li class="todo-item" data-todo-id="">
+        <label class="todo-row">
+          <input class="todo-checkbox" type="checkbox" />
+          <span class="todo-title"></span>
+        </label>
+        <button type="button" class="todo-delete" aria-label="Delete task">
+          Remove
+        </button>
+      </li>
+    </template>
+
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
