@@ -1,5 +1,5 @@
 /**
- * Lightweight UI sounds via Web Audio (Phase 1 MVP — pin + paper crinkle).
+ * Lightweight UI sounds via Web Audio (pin, crinkle, delete).
  * AudioContext may require a user gesture before playback on some browsers.
  */
 
@@ -65,4 +65,27 @@ export function playCrinkleSound() {
   gain.connect(audio.destination)
   noise.start(now)
   noise.stop(now + 0.23)
+}
+
+/**
+ * Short descending tone when a task is removed (contrast with ascending pin on add).
+ */
+export function playDeleteSound() {
+  const audio = getCtx()
+  if (audio.state === 'suspended') {
+    void audio.resume()
+  }
+  const now = audio.currentTime
+  const osc = audio.createOscillator()
+  const gain = audio.createGain()
+  osc.type = 'triangle'
+  osc.frequency.setValueAtTime(520, now)
+  osc.frequency.exponentialRampToValueAtTime(180, now + 0.1)
+  gain.gain.setValueAtTime(0.0001, now)
+  gain.gain.exponentialRampToValueAtTime(0.1, now + 0.012)
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.16)
+  osc.connect(gain)
+  gain.connect(audio.destination)
+  osc.start(now)
+  osc.stop(now + 0.17)
 }

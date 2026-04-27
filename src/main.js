@@ -6,15 +6,45 @@ import {
   setThemePreference,
 } from './theme.js'
 import { renderTodoList } from './render.js'
-import { createTodo, loadTodos, saveTodos } from './todos.js'
-import { playCrinkleSound, playPinSound } from './sounds.js'
+import {
+  appendTodo,
+  createTodo,
+  moveRootBlock,
+  normalizeTodoList,
+  removeTodoById,
+} from './todos.js'
+import {
+  MAX_TABS,
+  addTab,
+  loadNotebookState,
+  removeTab,
+  saveNotebookState,
+  setActiveTab,
+  tabFaceColor,
+} from './notebook-state.js'
+import { playCrinkleSound, playDeleteSound, playPinSound } from './sounds.js'
 
 /** @typedef {import('./todos.js').Todo} Todo */
+/** @typedef {import('./notebook-state.js').NotebookState} NotebookState */
 
-/** @type {Todo[]} */
-let todos = loadTodos()
+/** @type {NotebookState} */
+let notebook = loadNotebookState()
 
 initThemeFromStorage()
+
+function currentTodos() {
+  return notebook.todosByTabId[notebook.activeTabId] || []
+}
+
+function setCurrentTodos(next) {
+  notebook = {
+    ...notebook,
+    todosByTabId: {
+      ...notebook.todosByTabId,
+      [notebook.activeTabId]: normalizeTodoList(next),
+    },
+  }
+}
 
 function mount() {
   const root = document.querySelector('#app')
@@ -94,11 +124,41 @@ function mount() {
           <button type="submit" class="quick-add-submit">Add</button>
         </form>
 
-        <section class="list-section" aria-labelledby="list-heading">
-          <h2 id="list-heading" class="list-heading">Tasks</h2>
-          <ul id="todo-list" class="todo-list" role="list"></ul>
-          <p id="todo-empty" class="todo-empty" hidden>No tasks yet — add one above.</p>
-        </section>
+        <div class="notebook-tabs-shell">
+          <div class="notebook-folder-frame">
+            <div class="notebook-tabs-row">
+              <div
+                class="notebook-tabs"
+                role="tablist"
+                aria-label="Task folders"
+              ></div>
+              <button
+                type="button"
+                class="notebook-tab-add"
+                id="notebook-tab-add"
+                title="Add folder tab"
+                aria-label="Add folder tab"
+              >
+                +
+              </button>
+            </div>
+            <div
+              class="notebook-tab-panel"
+              id="notebook-tab-panel"
+              role="tabpanel"
+              tabindex="0"
+              aria-labelledby="list-heading"
+            >
+              <div class="notebook-folder-inner">
+                <section class="list-section" aria-labelledby="list-heading">
+                  <h2 id="list-heading" class="list-heading">Tasks</h2>
+                  <ul id="todo-list" class="todo-list" role="list"></ul>
+                  <p id="todo-empty" class="todo-empty" hidden>No tasks yet — add one above.</p>
+                </section>
+              </div>
+            </div>
+          </div>
+        </div>
       </main>
     </div>
   `
@@ -107,9 +167,21 @@ function mount() {
   const input = /** @type {HTMLInputElement} */ (root.querySelector('#todo-input'))
   const listEl = /** @type {HTMLUListElement} */ (root.querySelector('#todo-list'))
   const emptyEl = /** @type {HTMLElement} */ (root.querySelector('#todo-empty'))
+  const listHeading = /** @type {HTMLHeadingElement} */ (
+    root.querySelector('#list-heading')
+  )
+  const tabPanel = /** @type {HTMLElement} */ (
+    root.querySelector('#notebook-tab-panel')
+  )
+  const tabsEl = /** @type {HTMLElement} */ (root.querySelector('.notebook-tabs'))
+  const tabAddBtn = /** @type {HTMLButtonElement} */ (
+    root.querySelector('#notebook-tab-add')
+  )
   const themeAuto = /** @type {HTMLButtonElement} */ (root.querySelector('#theme-auto'))
   const themeDay = /** @type {HTMLButtonElement} */ (root.querySelector('#theme-day'))
-  const themeNight = /** @type {HTMLButtonElement} */ (root.querySelector('#theme-night'))
+  const themeNight = /** @type {HTMLButtonElement} */ (
+    root.querySelector('#theme-night')
+  )
 
   function syncThemeToolbar() {
     const pref = getPreference()
@@ -130,22 +202,175 @@ function mount() {
     }
   })
 
+  function triggerTabPanelAnimation() {
+    tabPanel.classList.remove('is-tab-animating')
+    void tabPanel.offsetWidth
+    tabPanel.classList.add('is-tab-animating')
+  }
+
+  function syncTabPanelAttrs() {
+    const panelId = 'notebook-tab-panel'
+    tabPanel.id = panelId
+    for (const btn of tabsEl.querySelectorAll('.notebook-tab')) {
+      const id = btn.getAttribute('data-tab-id')
+      if (!id) continue
+      btn.setAttribute('aria-controls', panelId)
+    }
+  }
+
+  function renderTabButtons() {
+    tabsEl.replaceChildren()
+    notebook.tabs.forEach((tab, index) => {
+      const isActive = tab.id === notebook.activeTabId
+      const tabBtn = document.createElement('button')
+      tabBtn.type = 'button'
+      tabBtn.className = 'notebook-tab'
+      tabBtn.setAttribute('role', 'tab')
+      tabBtn.setAttribute('data-tab-id', tab.id)
+      tabBtn.setAttribute('aria-selected', isActive ? 'true' : 'false')
+      tabBtn.setAttribute('tabindex', isActive ? '0' : '-1')
+      tabBtn.setAttribute('id', `tab-${tab.id}`)
+      tabBtn.style.setProperty('--tab-accent', tabFaceColor(tab, index))
+      tabBtn.title = tab.label
+      const labelSpan = document.createElement('span')
+      labelSpan.className = 'notebook-tab-label'
+      labelSpan.textContent = tab.label.toUpperCase()
+      tabBtn.appendChild(labelSpan)
+
+      const removeBtn = document.createElement('button')
+      removeBtn.type = 'button'
+      removeBtn.className = 'notebook-tab-remove'
+      removeBtn.setAttribute('aria-label', `Remove folder “${tab.label}”`)
+      removeBtn.setAttribute('title', `Remove “${tab.label}”`)
+      removeBtn.setAttribute('data-remove-tab', tab.id)
+      removeBtn.innerHTML =
+        '<span class="sr-only">Remove folder</span><span aria-hidden="true">×</span>'
+
+      const wrap = document.createElement('div')
+      wrap.className = 'notebook-tab-wrap'
+      const stack = notebook.tabs.length - 1
+      wrap.style.zIndex = isActive
+        ? '35'
+        : String(14 + Math.max(0, stack - index))
+      wrap.appendChild(tabBtn)
+      if (notebook.tabs.length > 1) {
+        wrap.appendChild(removeBtn)
+      }
+      tabsEl.appendChild(wrap)
+    })
+
+    syncTabPanelAttrs()
+    tabAddBtn.disabled = notebook.tabs.length >= MAX_TABS
+    tabAddBtn.setAttribute(
+      'aria-label',
+      notebook.tabs.length >= MAX_TABS
+        ? 'Maximum number of tabs reached'
+        : 'Add folder tab',
+    )
+
+    const active = notebook.tabs.find((t) => t.id === notebook.activeTabId)
+    listHeading.textContent = active ? active.label : 'Tasks'
+  }
+
   function syncEmptyState() {
+    const todos = currentTodos()
     emptyEl.hidden = todos.length > 0
     listEl.hidden = todos.length === 0
   }
 
   function persistAndRender() {
-    saveTodos(todos)
-    renderTodoList(listEl, template, todos)
+    saveNotebookState(notebook)
+    renderTabButtons()
+    renderTodoList(listEl, template, currentTodos())
     syncEmptyState()
   }
+
+  /** @type {string | null} */
+  let draggingRootId = null
+
+  function clearDragUi() {
+    draggingRootId = null
+    for (const el of listEl.querySelectorAll('.todo-item')) {
+      el.classList.remove('is-dragging', 'drag-before', 'drag-after')
+    }
+    for (const h of listEl.querySelectorAll('.todo-drag-handle')) {
+      h.setAttribute('aria-grabbed', 'false')
+    }
+  }
+
+  listEl.addEventListener('dragstart', (e) => {
+    const handle = /** @type {HTMLElement | null} */ (
+      /** @type {HTMLElement} */ (e.target).closest('.todo-drag-handle')
+    )
+    if (!handle || handle.hidden) return
+    const li = handle.closest('.todo-item')
+    if (!(li instanceof HTMLElement)) return
+    if (li.classList.contains('is-subtask')) return
+    const id = li.dataset.todoId
+    if (!id) return
+    draggingRootId = id
+    handle.setAttribute('aria-grabbed', 'true')
+    li.classList.add('is-dragging')
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = 'move'
+      e.dataTransfer.setData('text/plain', id)
+    }
+  })
+
+  listEl.addEventListener('dragend', () => {
+    clearDragUi()
+  })
+
+  listEl.addEventListener('dragover', (e) => {
+    if (!draggingRootId) return
+    const li = /** @type {HTMLElement | null} */ (
+      /** @type {HTMLElement} */ (e.target).closest('.todo-item')
+    )
+    if (!(li instanceof HTMLElement)) return
+    if (li.classList.contains('is-subtask')) return
+    const overId = li.dataset.todoId
+    if (!overId || overId === draggingRootId) return
+    e.preventDefault()
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'move'
+    for (const el of listEl.querySelectorAll('.todo-item')) {
+      el.classList.remove('drag-before', 'drag-after')
+    }
+    const rect = li.getBoundingClientRect()
+    const before = e.clientY < rect.top + rect.height / 2
+    li.classList.add(before ? 'drag-before' : 'drag-after')
+  })
+
+  listEl.addEventListener('drop', (e) => {
+    const fromId = draggingRootId || e.dataTransfer?.getData('text/plain')
+    if (!fromId) return
+    const li = /** @type {HTMLElement | null} */ (
+      /** @type {HTMLElement} */ (e.target).closest('.todo-item')
+    )
+    if (!(li instanceof HTMLElement)) return
+    if (li.classList.contains('is-subtask')) {
+      clearDragUi()
+      return
+    }
+    const toId = li.dataset.todoId
+    if (!toId || toId === fromId) {
+      clearDragUi()
+      return
+    }
+    e.preventDefault()
+    const todos = currentTodos()
+    const placeAfter = li.classList.contains('drag-after')
+    const next = moveRootBlock(todos, fromId, toId, placeAfter)
+    setCurrentTodos(next)
+    clearDragUi()
+    persistAndRender()
+  })
 
   form.addEventListener('submit', (e) => {
     e.preventDefault()
     const title = input.value
     if (!title.trim()) return
-    todos.push(createTodo(title))
+    const todos = currentTodos()
+    setCurrentTodos(appendTodo(todos, createTodo(title)))
     input.value = ''
     playPinSound()
     persistAndRender()
@@ -157,6 +382,7 @@ function mount() {
     if (!(target instanceof HTMLInputElement) || target.type !== 'checkbox') return
     const id = target.closest('[data-todo-id]')?.getAttribute('data-todo-id')
     if (!id) return
+    const todos = currentTodos()
     const todo = todos.find((t) => t.id === id)
     if (!todo) return
     const wasDone = todo.done
@@ -164,16 +390,78 @@ function mount() {
     if (todo.done && !wasDone) {
       playCrinkleSound()
     }
+    setCurrentTodos(todos)
     persistAndRender()
   })
 
   listEl.addEventListener('click', (e) => {
-    const btn = /** @type {HTMLElement} */ (e.target).closest('.todo-delete')
+    const addSub = /** @type {HTMLElement | null} */ (
+      /** @type {HTMLElement} */ (e.target).closest('.todo-add-subtask')
+    )
+    if (addSub instanceof HTMLButtonElement && !addSub.hidden) {
+      const li = addSub.closest('.todo-item')
+      if (!(li instanceof HTMLElement) || li.classList.contains('is-subtask')) return
+      const parentId = li.dataset.todoId
+      if (!parentId) return
+      const title = window.prompt('Sub-task title')
+      if (!title || !title.trim()) return
+      const todos = currentTodos()
+      setCurrentTodos(appendTodo(todos, createTodo(title, parentId)))
+      playPinSound()
+      persistAndRender()
+      return
+    }
+
+    const btn = /** @type {HTMLElement | null} */ (
+      /** @type {HTMLElement} */ (e.target).closest('.todo-delete')
+    )
     if (!(btn instanceof HTMLButtonElement)) return
     const id = btn.closest('[data-todo-id]')?.getAttribute('data-todo-id')
     if (!id) return
-    todos = todos.filter((t) => t.id !== id)
+    setCurrentTodos(removeTodoById(currentTodos(), id))
+    playDeleteSound()
     persistAndRender()
+  })
+
+  tabsEl.addEventListener('click', (e) => {
+    const removeBtn = /** @type {HTMLElement | null} */ (
+      /** @type {HTMLElement} */ (e.target).closest('[data-remove-tab]')
+    )
+    if (removeBtn instanceof HTMLButtonElement) {
+      e.preventDefault()
+      e.stopPropagation()
+      const id = removeBtn.getAttribute('data-remove-tab')
+      if (!id) return
+      notebook = removeTab(notebook, id)
+      triggerTabPanelAnimation()
+      persistAndRender()
+      return
+    }
+
+    const tabBtn = /** @type {HTMLElement | null} */ (
+      /** @type {HTMLElement} */ (e.target).closest('.notebook-tab')
+    )
+    if (!(tabBtn instanceof HTMLButtonElement)) return
+    const id = tabBtn.getAttribute('data-tab-id')
+    if (!id || id === notebook.activeTabId) return
+    notebook = setActiveTab(notebook, id)
+    triggerTabPanelAnimation()
+    persistAndRender()
+  })
+
+  tabAddBtn.addEventListener('click', () => {
+    if (notebook.tabs.length >= MAX_TABS) return
+    const name = window.prompt('New folder name')
+    if (!name || !name.trim()) return
+    const next = addTab(notebook, name.trim())
+    if (!next) return
+    notebook = next
+    triggerTabPanelAnimation()
+    persistAndRender()
+  })
+
+  tabPanel.addEventListener('animationend', () => {
+    tabPanel.classList.remove('is-tab-animating')
   })
 
   persistAndRender()

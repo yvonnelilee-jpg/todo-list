@@ -19,7 +19,6 @@
   --paper-card: #fff9eb;
   --ink: #3d3830;
   --ink-muted: #6e665c;
-  --washi-strip: #e8b4b8;
   --accent: #c45c26;
   --accent-soft: rgba(196, 92, 38, 0.12);
   --border: rgba(61, 56, 48, 0.12);
@@ -35,6 +34,11 @@
   --notebook-grid-size: 22px;
   --notebook-grid-line: rgba(100, 85, 78, 0.2);
 
+  /* Manila-style folder tabs */
+  --folder-panel-bg: #ffffff;
+  --folder-tab-inactive-top: #ececec;
+  --folder-tab-inactive-bot: #d4d4d4;
+
   color: var(--ink);
 }
 
@@ -44,7 +48,6 @@
   --paper-card: #2a2620;
   --ink: #f3efe6;
   --ink-muted: #b8b0a4;
-  --washi-strip: #8b5a5e;
   --accent: #e8a87c;
   --accent-soft: rgba(232, 168, 124, 0.15);
   --border: rgba(243, 239, 230, 0.12);
@@ -54,6 +57,10 @@
   --notebook-frame: #5c3538;
   --notebook-paper: #26221c;
   --notebook-grid-line: rgba(243, 239, 230, 0.06);
+
+  --folder-panel-bg: var(--paper-card);
+  --folder-tab-inactive-top: #3d3a36;
+  --folder-tab-inactive-bot: #2f2d2a;
 
   color: var(--ink);
 }
@@ -126,9 +133,11 @@ h2 {
   max-width: 520px;
   padding: clamp(20px, 3.5vw, 32px) clamp(18px, 3vw, 28px) clamp(28px, 4vw, 40px);
   background-color: var(--notebook-paper);
-  border: var(--notebook-border-w) solid var(--notebook-frame);
+  /* Inset ring instead of border: thick border + radius often leaves corner gaps */
+  border: none;
   border-radius: var(--notebook-radius);
   box-shadow:
+    inset 0 0 0 var(--notebook-border-w) var(--notebook-frame),
     rgba(0, 0, 0, 0.2) 0 24px 48px -20px,
     rgba(0, 0, 0, 0.08) 0 8px 16px -8px;
 }
@@ -139,9 +148,9 @@ h2 {
   position: absolute;
   z-index: 0;
   pointer-events: none;
-  inset: 0;
+  inset: var(--notebook-border-w);
   border-radius: max(
-    10px,
+    6px,
     calc(var(--notebook-radius) - var(--notebook-border-w))
   );
   background-image:
@@ -329,6 +338,7 @@ h2 {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-height: 0;
 }
 
 .list-heading {
@@ -337,6 +347,338 @@ h2 {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ink-muted);
+}
+
+/* --- Phase 2: manila folder tabs + thin folder frame --- */
+
+.notebook-tabs-shell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  margin-top: 8px;
+}
+
+.notebook-folder-frame {
+  border: 1px solid var(--notebook-frame);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  background: var(--folder-panel-bg);
+  overflow: visible;
+}
+
+.notebook-tabs-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px 10px;
+  padding: 10px 10px 0;
+  position: relative;
+  z-index: 2;
+  border-bottom: 1px solid var(--notebook-frame);
+}
+
+.notebook-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0;
+  flex: 1;
+  min-width: 0;
+  padding-bottom: 0;
+}
+
+.notebook-tab-wrap {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  flex-shrink: 0;
+  /* Shallow overlap: folder look without covering neighbor labels */
+  margin-right: -8px;
+}
+
+.notebook-tab-wrap:last-child {
+  margin-right: 10px;
+}
+
+/* Skewed folder tab (trapezoid feel); left tabs stack above right */
+.notebook-tab {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  border: none;
+  cursor: pointer;
+  transform: skewX(-14deg);
+  transform-origin: 50% 100%;
+  border-radius: 11px 11px 0 0;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  box-sizing: border-box;
+  color: var(--ink-muted);
+  transition:
+    transform 0.2s ease,
+    color 0.15s ease;
+}
+
+.notebook-tab::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: 11px 11px 0 0;
+  /* Muted per-tab hue from --tab-accent (set in JS) */
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--tab-accent, #bdbdbd) 38%, #ffffff),
+    color-mix(in srgb, var(--tab-accent, #bdbdbd) 55%, #d0d0d0)
+  );
+  border: 1px solid var(--notebook-frame);
+  border-bottom: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+:root[data-theme='dark'] .notebook-tab::before {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--tab-accent, #6e6e6e) 32%, var(--folder-panel-bg)),
+    color-mix(in srgb, var(--tab-accent, #6e6e6e) 48%, #1a1916)
+  );
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.notebook-tab:hover {
+  color: var(--ink);
+}
+
+.notebook-tab[aria-selected='true'] {
+  transform: skewX(-14deg) translateY(-3px);
+  z-index: 2;
+  color: var(--ink);
+}
+
+.notebook-tab[aria-selected='true']::before {
+  background: var(--folder-panel-bg);
+  border-color: var(--notebook-frame);
+  box-shadow: none;
+}
+
+/* Bridge active tab to panel: hide separator band under selected tab */
+.notebook-tab[aria-selected='true']::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 4px;
+  background: var(--folder-panel-bg);
+  z-index: 1;
+}
+
+.notebook-tab-label {
+  position: relative;
+  z-index: 2;
+  display: block;
+  transform: skewX(14deg);
+  box-sizing: border-box;
+  /* Extra left inset so first letters sit past the overlapping tab to the left */
+  padding: 10px 16px 10px 30px;
+  max-width: min(46vw, 240px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 600 11px/1.25 var(--sans);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-align: left;
+}
+
+/* First tab has nothing overlapping its left edge — symmetric padding */
+.notebook-tab-wrap:first-child .notebook-tab-label {
+  padding: 10px 18px;
+  text-align: center;
+}
+
+.notebook-tab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+.notebook-tab-remove {
+  position: absolute;
+  top: -6px;
+  right: -2px;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--notebook-frame);
+  border-radius: 50%;
+  background: var(--folder-panel-bg);
+  color: var(--ink-muted);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.95);
+  box-shadow: var(--shadow);
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.notebook-tab-wrap:focus-within .notebook-tab-remove,
+.notebook-tab-wrap:hover .notebook-tab-remove {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
+}
+
+.notebook-tab-remove:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.notebook-tab-remove:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.notebook-tab-add {
+  flex-shrink: 0;
+  width: 38px;
+  height: 36px;
+  margin-bottom: 2px;
+  padding: 0;
+  border: 1px dashed var(--notebook-frame);
+  border-radius: var(--radius);
+  background: var(--folder-panel-bg);
+  color: var(--ink-muted);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.notebook-tab-add:hover:not(:disabled) {
+  color: var(--ink);
+  background: var(--accent-soft);
+}
+
+.notebook-tab-add:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.notebook-tab-add:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.notebook-tab-panel {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  padding: 0;
+  background: var(--folder-panel-bg);
+  border: none;
+  border-radius: 0;
+}
+
+.notebook-folder-inner {
+  padding: clamp(14px, 2.5vw, 20px);
+}
+
+.notebook-tab-panel.is-tab-animating .notebook-folder-inner {
+  animation: notebook-tab-panel-in 0.22s ease;
+}
+
+@keyframes notebook-tab-panel-in {
+  from {
+    opacity: 0.72;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.todo-add-subtask {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  min-width: 40px;
+  padding: 0;
+  margin: 0;
+  color: var(--ink-muted);
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    color 0.12s ease,
+    background 0.12s ease,
+    transform 0.12s ease;
+}
+
+.todo-add-subtask-icon {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.todo-add-subtask:hover {
+  color: var(--accent);
+  background: var(--accent-soft);
+  transform: scale(1.06);
+}
+
+.todo-add-subtask:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.todo-item.is-subtask {
+  padding-left: 6px;
+  background: linear-gradient(
+    90deg,
+    rgba(196, 92, 38, 0.12) 0,
+    transparent 12px
+  );
+}
+
+.todo-item.is-subtask .todo-title {
+  font-size: 14px;
+}
+
+:root[data-theme='dark'] .todo-item.is-subtask {
+  background: linear-gradient(
+    90deg,
+    rgba(232, 168, 124, 0.12) 0,
+    transparent 12px
+  );
 }
 
 /* Single panel: all tasks share one list surface */
@@ -360,9 +702,58 @@ h2 {
   justify-content: space-between;
   gap: 8px;
   min-height: 52px;
-  padding: 10px 8px 10px 12px;
+  padding: 10px 8px 10px 8px;
   border-bottom: 1px solid var(--border);
   background: transparent;
+}
+
+.todo-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 28px;
+  min-height: 44px;
+  margin: -6px 0;
+  padding: 0 2px;
+  color: var(--ink-muted);
+  border-radius: 8px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.todo-drag-handle:active {
+  cursor: grabbing;
+}
+
+.todo-drag-handle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.todo-drag-icon {
+  width: 18px;
+  height: 18px;
+  opacity: 0.65;
+}
+
+@media (hover: hover) {
+  .todo-drag-handle:hover .todo-drag-icon {
+    opacity: 1;
+  }
+}
+
+.todo-item.is-dragging {
+  opacity: 0.45;
+}
+
+.todo-item.drag-before {
+  box-shadow: inset 0 3px 0 0 var(--accent);
+}
+
+.todo-item.drag-after {
+  box-shadow: inset 0 -3px 0 0 var(--accent);
 }
 
 .todo-item:last-child {
