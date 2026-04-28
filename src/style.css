@@ -397,32 +397,6 @@ h2 {
   padding-bottom: 0;
 }
 
-.notebook-tabs-actions {
-  display: flex;
-  gap: 8px;
-  margin-right: 10px;
-}
-
-.tab-action-btn {
-  min-height: 34px;
-  padding: 6px 10px;
-  border: 1px solid var(--border);
-  background: var(--paper-card);
-  color: var(--ink);
-  border-radius: 8px;
-  cursor: pointer;
-  font: 600 12px/1 var(--sans);
-}
-
-.tab-action-btn:hover {
-  background: var(--accent-soft);
-}
-
-.tab-action-btn:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
 .notebook-tab-wrap {
   position: relative;
   display: flex;

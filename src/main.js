@@ -9,10 +9,7 @@ import { renderTodoList } from './render.js'
 import {
   appendTodo,
   createTodo,
-  createTab,
-  deleteTab,
   ensureDefaultTabs,
-  loadTabs,
   loadTodosByTab,
   moveRootBlockPersist,
   removeTodoById,
@@ -135,10 +132,6 @@ async function mount() {
         <div class="notebook-tabs-shell">
           <div class="notebook-folder-frame">
             <div class="notebook-tabs-row">
-              <div class="notebook-tabs-actions" aria-label="Folder actions">
-                <button type="button" class="tab-action-btn" id="tab-add">+ Tab</button>
-                <button type="button" class="tab-action-btn" id="tab-delete">Delete Tab</button>
-              </div>
               <div
                 class="notebook-tabs"
                 role="tablist"
@@ -172,10 +165,6 @@ async function mount() {
     root.querySelector('#notebook-tab-panel')
   )
   const tabsEl = /** @type {HTMLElement} */ (root.querySelector('.notebook-tabs'))
-  const addTabBtn = /** @type {HTMLButtonElement} */ (root.querySelector('#tab-add'))
-  const deleteTabBtn = /** @type {HTMLButtonElement} */ (
-    root.querySelector('#tab-delete')
-  )
   const themeAuto = /** @type {HTMLButtonElement} */ (root.querySelector('#theme-auto'))
   const themeDay = /** @type {HTMLButtonElement} */ (root.querySelector('#theme-day'))
   const themeNight = /** @type {HTMLButtonElement} */ (
@@ -267,7 +256,6 @@ async function mount() {
     renderTabButtons()
     renderTodoList(listEl, template, currentTodos())
     syncEmptyState()
-    deleteTabBtn.disabled = notebook.tabs.length <= 1
     form.querySelector('.quick-add-submit')?.toggleAttribute(
       'disabled',
       !notebook.activeTabId,
@@ -488,53 +476,6 @@ async function mount() {
 
   tabPanel.addEventListener('animationend', () => {
     tabPanel.classList.remove('is-tab-animating')
-  })
-
-  addTabBtn.addEventListener('click', async () => {
-    const label = window.prompt('Folder name', '')
-    if (label === null) return
-    try {
-      const tab = await createTab(label)
-      notebook = {
-        ...notebook,
-        tabs: [...notebook.tabs, { id: tab.id, label: tab.label }],
-        activeTabId: tab.id,
-        todosByTabId: { ...notebook.todosByTabId, [tab.id]: [] },
-      }
-      triggerTabPanelAnimation()
-      renderApp()
-    } catch (error) {
-      console.error('Failed to create tab', error)
-    }
-  })
-
-  deleteTabBtn.addEventListener('click', async () => {
-    if (notebook.tabs.length <= 1) return
-    const current = notebook.tabs.find((t) => t.id === notebook.activeTabId)
-    if (!current) return
-    const confirmed = window.confirm(`Delete folder "${current.label}" and its todos?`)
-    if (!confirmed) return
-    try {
-      await deleteTab(current.id)
-      const tabs = await loadTabs()
-      notebook = {
-        ...notebook,
-        tabs: tabs.map((t) => ({ id: t.id, label: t.label })),
-        activeTabId: tabs[0]?.id ?? '',
-        todosByTabId: Object.fromEntries(
-          tabs.map((t) => [t.id, notebook.todosByTabId[t.id] ?? []]),
-        ),
-      }
-      if (notebook.activeTabId) {
-        notebook.todosByTabId[notebook.activeTabId] = await loadTodosByTab(
-          notebook.activeTabId,
-        )
-      }
-      triggerTabPanelAnimation()
-      renderApp()
-    } catch (error) {
-      console.error('Failed to delete tab', error)
-    }
   })
 
   listEl.addEventListener('click', async (e) => {
