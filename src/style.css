@@ -26,13 +26,14 @@
   --radius: 12px;
 
   /* Framed “graph paper” notebook (hero reference) */
-  --app-canvas: #0f0e0d;
+  --app-canvas: var(--paper-card);
   --notebook-radius: clamp(18px, 3.2vw, 28px);
   --notebook-border-w: clamp(10px, 1.8vw, 16px);
   --notebook-frame: #cf3838;
   --notebook-paper: #fdfcf8;
   --notebook-grid-size: 22px;
   --notebook-grid-line: rgba(100, 85, 78, 0.2);
+  --ui-grid: var(--notebook-grid-size);
 
   /* Manila-style folder tabs */
   --folder-panel-bg: #ffffff;
@@ -190,15 +191,16 @@ h2 {
 }
 
 .notebook-header {
-  margin-bottom: 28px;
+  margin-bottom: var(--ui-grid);
 }
 
 .notebook-header-row {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
+  gap: var(--ui-grid);
   flex-wrap: wrap;
+  margin-bottom: calc(var(--ui-grid) / 2);
 }
 
 .theme-toolbar {
@@ -256,11 +258,21 @@ h2 {
 }
 
 .eyebrow {
-  margin: 0 0 8px;
-  font-size: 12px;
-  letter-spacing: 0.14em;
+  margin: calc(var(--ui-grid) / 4) 0 0;
+  font-size: 18px;
+  line-height: calc(var(--ui-grid) * 0.75);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--ink-muted);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.notebook-date {
+  margin: 0;
+  font-size: 14px;
+  line-height: var(--ui-grid);
+  color: color-mix(in srgb, var(--ink-muted) 88%, var(--notebook-paper));
+  font-variant-numeric: tabular-nums;
 }
 
 .notebook-title {
@@ -271,19 +283,20 @@ h2 {
 
 .lede {
   margin: 0;
-  color: var(--ink-muted);
-  font-size: 15px;
+  line-height: var(--ui-grid);
+  color: color-mix(in srgb, var(--ink-muted) 92%, var(--notebook-paper));
+  font-size: 16px;
 }
 
 .notebook-main {
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: var(--ui-grid);
 }
 
 .quick-add {
   display: flex;
-  gap: 10px;
+  gap: calc(var(--ui-grid) / 2);
   align-items: stretch;
 }
 

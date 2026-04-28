@@ -32,6 +32,19 @@ import { playCrinkleSound, playDeleteSound, playPinSound } from './sounds.js'
 /** @type {NotebookState} */
 let notebook = { tabs: [], activeTabId: '', todosByTabId: {} }
 
+const notebookDateFormatter = new Intl.DateTimeFormat(undefined, {
+  month: '2-digit',
+  day: '2-digit',
+  year: 'numeric',
+})
+
+/**
+ * @returns {string}
+ */
+function formatNotebookDate() {
+  return notebookDateFormatter.format(new Date())
+}
+
 initThemeFromStorage()
 
 function currentTodos() {
@@ -60,7 +73,10 @@ async function mount() {
     <div class="notebook">
       <header class="notebook-header">
         <div class="notebook-header-row">
-          <p class="eyebrow">Task Notebook</p>
+          <div>
+            <p class="notebook-date">${formatNotebookDate()}</p>
+            <p class="eyebrow">Task Notebook</p>
+          </div>
           <div
             class="theme-toolbar"
             role="group"
@@ -109,7 +125,6 @@ async function mount() {
             </button>
           </div>
         </div>
-        <h1 class="notebook-title">Today</h1>
         <p class="lede">Quick capture — warm paper, simple lists.</p>
       </header>
 
