@@ -86,7 +86,7 @@ function mount() {
             name="title"
             type="text"
             class="quick-add-input"
-            placeholder="Write a task and press Enter…"
+            placeholder="Write a task…"
             autocomplete="off"
             maxlength="500"
             required
