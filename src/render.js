@@ -44,14 +44,10 @@ export function renderTodoList(listEl, template, todos) {
     const delBtn = /** @type {HTMLButtonElement | null} */ (
       node.querySelector('.todo-delete')
     )
-    const subtaskBtn = /** @type {HTMLButtonElement | null} */ (
-      node.querySelector('.todo-subtask')
-    )
     const dragHandle = /** @type {HTMLElement | null} */ (
       node.querySelector('.todo-drag-handle')
     )
-    if (!li || !checkbox || !titleEl || !timeEl || !delBtn || !subtaskBtn || !dragHandle)
-      continue
+    if (!li || !checkbox || !titleEl || !timeEl || !delBtn || !dragHandle) continue
 
     const isSub = Boolean(todo.parentId)
     li.dataset.todoId = todo.id
@@ -73,14 +69,6 @@ export function renderTodoList(listEl, template, todos) {
     const delLabel = `Delete “${todo.title}”`
     delBtn.setAttribute('aria-label', delLabel)
     delBtn.setAttribute('title', delLabel)
-
-    const subtaskLabel = `Add subtask for “${todo.title}”`
-    subtaskBtn.setAttribute('aria-label', subtaskLabel)
-    subtaskBtn.setAttribute('title', subtaskLabel)
-    if (isSub) {
-      subtaskBtn.hidden = true
-      subtaskBtn.setAttribute('aria-hidden', 'true')
-    }
 
     const reorderLabel = `Drag to reorder: “${todo.title}”`
     dragHandle.setAttribute('aria-label', reorderLabel)

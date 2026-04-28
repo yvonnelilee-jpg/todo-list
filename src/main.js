@@ -478,31 +478,6 @@ async function mount() {
     tabPanel.classList.remove('is-tab-animating')
   })
 
-  listEl.addEventListener('click', async (e) => {
-    const subtaskBtn = /** @type {HTMLElement | null} */ (
-      /** @type {HTMLElement} */ (e.target).closest('.todo-subtask')
-    )
-    if (!(subtaskBtn instanceof HTMLButtonElement)) return
-    const ready = await ensureActiveTabReady()
-    if (!ready) return
-    const parentId = subtaskBtn.closest('[data-todo-id]')?.getAttribute('data-todo-id')
-    if (!parentId) return
-    const title = window.prompt('Subtask title', '')
-    if (!title || !title.trim()) return
-    try {
-      const created = await createTodo({
-        tabId: notebook.activeTabId,
-        title,
-        parentId,
-      })
-      setCurrentTodos(appendTodo(currentTodos(), created))
-      renderApp()
-      input.focus()
-    } catch (error) {
-      console.error('Failed to create subtask', error)
-    }
-  })
-
   input.focus()
 }
 
