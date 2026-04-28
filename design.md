@@ -1,14 +1,12 @@
 ### **Project Overview**
 
-Task Notebook is a lightweight, browser-based productivity tool designed for users who crave the tactile, cozy aesthetic of a physical planner but need the convenience of a digital interface. Taking inspiration from Todoist, the app focuses on task management efficiency while maintaining a "scrapbook" visual identity using digital washi tape and post-it note elements.
+Task Notebook is a lightweight, browser-based productivity tool designed for users who crave the tactile, cozy aesthetic of a physical planner but need the convenience of a digital interface. The app focuses on task management efficiency while maintaining a "scrapbook" visual identity using digital washi tape and post-it note elements.
 
 Target Audience / User Base
 
 - Students and Creatives: Users who enjoy "study-gram" aesthetics and want an organized but visually pleasing space.
-- Casual Organizers: People who find standard enterprise tools (like Jira or Monday.com) too "cold" or clinical.
-- Minimalists: Users looking for a low-friction entry point to track daily chores and habits without a complex learning curve.
 
-### **Technology Stack**
+**Technology Stack**
 
 - **Framework:** [Vite](https://gemini.google.com/) for lightning-fast bundling and HMR (Hot Module Replacement).
 
@@ -20,9 +18,15 @@ Later on :  capture the "Notebook & Washi Tape" vibe, we will use CSS variables 
 
 ### **Modular CSS (Separation of Concerns)**
 
-- **Styling:** Modular CSS with custom properties (CSS Variables) for the "Washi" theme.
+- **Styling:** Modular CSS with custom properties (CSS Variables) for the "day" "night" theme.
 
 ### **HTML (for now just frontend)**
 
 - `template`: For generating task items dynamically via Vanilla JS.
+
+### **Persistence Architecture**
+
+- Supabase is the source of truth for all folders/tabs and todos.
+- Data model uses `tabs` + `todos` tables with ordering (`position`) and one-level subtasks (`parent_id`).
+- Browser `localStorage` is used only for theme preference, not todo/tab persistence.
 

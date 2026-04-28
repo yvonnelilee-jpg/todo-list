@@ -19,7 +19,6 @@
   --paper-card: #fff9eb;
   --ink: #3d3830;
   --ink-muted: #6e665c;
-  --washi-strip: #e8b4b8;
   --accent: #c45c26;
   --accent-soft: rgba(196, 92, 38, 0.12);
   --border: rgba(61, 56, 48, 0.12);
@@ -35,6 +34,9 @@
   --notebook-grid-size: 22px;
   --notebook-grid-line: rgba(100, 85, 78, 0.2);
 
+  /* Manila-style folder tabs */
+  --folder-panel-bg: #ffffff;
+
   color: var(--ink);
 }
 
@@ -44,9 +46,9 @@
   --paper-card: #2a2620;
   --ink: #f3efe6;
   --ink-muted: #b8b0a4;
-  --washi-strip: #8b5a5e;
-  --accent: #e8a87c;
-  --accent-soft: rgba(232, 168, 124, 0.15);
+  /* Softer than day accent — same warmth, less glare on charcoal paper */
+  --accent: #9f8268;
+  --accent-soft: rgba(159, 130, 104, 0.22);
   --border: rgba(243, 239, 230, 0.12);
   --shadow: rgba(0, 0, 0, 0.35) 0 10px 28px -8px;
 
@@ -54,6 +56,8 @@
   --notebook-frame: #5c3538;
   --notebook-paper: #26221c;
   --notebook-grid-line: rgba(243, 239, 230, 0.06);
+
+  --folder-panel-bg: var(--paper-card);
 
   color: var(--ink);
 }
@@ -124,11 +128,13 @@ h2 {
   isolation: isolate;
   width: 100%;
   max-width: 520px;
-  padding: clamp(20px, 3.5vw, 32px) clamp(18px, 3vw, 28px) clamp(28px, 4vw, 40px);
+  padding: clamp(56px, 9vw, 88px) clamp(48px, 8vw, 80px) clamp(72px, 10vw, 104px);
   background-color: var(--notebook-paper);
-  border: var(--notebook-border-w) solid var(--notebook-frame);
+  /* Inset ring instead of border: thick border + radius often leaves corner gaps */
+  border: none;
   border-radius: var(--notebook-radius);
   box-shadow:
+    inset 0 0 0 var(--notebook-border-w) var(--notebook-frame),
     rgba(0, 0, 0, 0.2) 0 24px 48px -20px,
     rgba(0, 0, 0, 0.08) 0 8px 16px -8px;
 }
@@ -139,9 +145,9 @@ h2 {
   position: absolute;
   z-index: 0;
   pointer-events: none;
-  inset: 0;
+  inset: var(--notebook-border-w);
   border-radius: max(
-    10px,
+    6px,
     calc(var(--notebook-radius) - var(--notebook-border-w))
   );
   background-image:
@@ -325,18 +331,290 @@ h2 {
   filter: brightness(1.05);
 }
 
+:root[data-theme='dark'] .quick-add-submit {
+  background: color-mix(in srgb, var(--accent) 88%, var(--paper-card));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+:root[data-theme='dark'] .quick-add-submit:hover {
+  filter: brightness(1.06);
+}
+
 .list-section {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-height: 0;
 }
 
-.list-heading {
+/* --- Phase 2: manila folder tabs + thin folder frame --- */
+
+.notebook-tabs-shell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  margin-top: 8px;
+}
+
+.notebook-folder-frame {
+  /* Red stroke width for frame, tabs, inner (inherited by descendants) */
+  --folder-red-stroke: 2px;
+  /* Softer than outer notebook frame — same hue family, less saturated */
+  --folder-edge-color: color-mix(
+    in srgb,
+    var(--notebook-frame) 45%,
+    var(--notebook-paper)
+  );
+  /* Inset ring: border + radius often gaps at corners — shadow stays continuous */
+  border: none;
+  border-radius: var(--radius);
+  box-shadow:
+    inset 0 0 0 var(--folder-red-stroke) var(--folder-edge-color),
+    var(--shadow);
+  background: var(--folder-panel-bg);
+  overflow: visible;
+}
+
+.notebook-tabs-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0;
+  padding: 12px 12px 0;
+  position: relative;
+  z-index: 2;
+  /* No border-bottom: .notebook-folder-inner inset ring already draws the divider */
+}
+
+.notebook-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0;
+  flex: 1;
+  min-width: 0;
+  padding-bottom: 0;
+}
+
+.notebook-tabs-actions {
+  display: flex;
+  gap: 8px;
+  margin-right: 10px;
+}
+
+.tab-action-btn {
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  background: var(--paper-card);
+  color: var(--ink);
+  border-radius: 8px;
+  cursor: pointer;
+  font: 600 12px/1 var(--sans);
+}
+
+.tab-action-btn:hover {
+  background: var(--accent-soft);
+}
+
+.tab-action-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.notebook-tab-wrap {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  flex-shrink: 0;
+  /* Negative margin on following wraps: each tab slides left over the previous;
+   * z-index (first highest) keeps the left tab visually on top of the overlap. */
+  margin-left: 0;
+}
+
+.notebook-tab-wrap:not(:first-child) {
+  margin-left: -14px;
+}
+
+/*
+ * Overlapping tabs: rounded top, flat bottom. First tab paints above the rest
+ * so borders do not double up in the overlap (needs opaque tab face).
+ */
+.notebook-tab {
+  --tab-radius: 10px;
+  /* Active tab: accent strip height beyond folder stroke (see ::after) */
+  --tab-accent-band: 9px;
+  position: relative;
   margin: 0;
-  font-size: 14px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  padding: 0;
+  border: none;
+  cursor: pointer;
+  border-radius: 0;
+  background: transparent;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  min-height: 46px;
+  box-sizing: border-box;
   color: var(--ink-muted);
+  transition:
+    color 0.15s ease,
+    box-shadow 0.2s ease;
+}
+
+.notebook-tab::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: var(--tab-radius) var(--tab-radius) 0 0;
+  /* Same as folder fill (not grey): opaque so stacked tabs hide the tab behind */
+  background: var(--folder-panel-bg);
+  border: var(--folder-red-stroke) solid var(--folder-edge-color);
+  border-bottom: none;
+}
+
+.notebook-tab:hover {
+  color: var(--ink);
+}
+
+.notebook-tab:not([aria-selected='true']):hover::before {
+  border-color: color-mix(in srgb, var(--folder-edge-color) 70%, var(--ink-muted));
+}
+
+.notebook-tab[aria-selected='true'] {
+  z-index: 2;
+  color: var(--ink);
+}
+
+.notebook-tab[aria-selected='true']::before {
+  bottom: 0;
+  background: var(--folder-panel-bg);
+  border-color: var(--folder-edge-color);
+  /* Top edge uses accent in ::after so it can sit over this stroke */
+  border-top-color: transparent;
+  box-shadow:
+    2px 0 6px -2px rgb(0 0 0 / 0.12),
+    -2px 0 6px -2px rgb(0 0 0 / 0.12),
+    0 -2px 6px -3px rgb(0 0 0 / 0.08);
+}
+
+/* Accent band above ::before (z-index -1) so it covers the side stroke at the top */
+.notebook-tab[aria-selected='true']::after {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: calc(var(--folder-red-stroke) + var(--tab-accent-band));
+  border-radius: var(--tab-radius) var(--tab-radius) 0 0;
+  background: var(--tab-accent, var(--accent));
+  pointer-events: none;
+}
+
+:root[data-theme='dark'] .notebook-tab[aria-selected='true']::before {
+  border-top-color: transparent;
+  box-shadow:
+    2px 0 8px -2px rgb(0 0 0 / 0.35),
+    -2px 0 8px -2px rgb(0 0 0 / 0.35),
+    0 -2px 6px -3px rgb(0 0 0 / 0.25);
+}
+
+:root[data-theme='dark'] .notebook-tab[aria-selected='true'] {
+  color: color-mix(in srgb, var(--ink) 78%, var(--ink-muted));
+}
+
+:root[data-theme='dark'] .notebook-tab[aria-selected='true']::after {
+  background: color-mix(in srgb, var(--tab-accent, var(--accent)) 75%, var(--paper-card));
+}
+
+.notebook-tab[aria-selected='true'] .notebook-tab-label {
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.notebook-tab-label {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 20px 22px 10px;
+  max-width: min(46vw, 240px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 600 11px/1.25 var(--sans);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.notebook-tab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+.notebook-tab-panel {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  padding: 0;
+  background: var(--folder-panel-bg);
+  border: none;
+  /* Match frame inner curve so panel fill does not notch the red ring */
+  border-radius: 0 0 calc(var(--radius) - var(--folder-red-stroke))
+    calc(var(--radius) - var(--folder-red-stroke));
+}
+
+.notebook-folder-inner {
+  padding: clamp(14px, 2.5vw, 20px);
+  border-radius: max(4px, calc(var(--radius) - 6px));
+  /* Full inset ring (incl. top) = single divider under tabs — no overlap with tabs row */
+  box-shadow: inset 0 0 0 var(--folder-red-stroke) var(--folder-edge-color);
+}
+
+.notebook-tab-panel.is-tab-animating .notebook-folder-inner {
+  animation: notebook-tab-panel-in 0.22s ease;
+}
+
+@keyframes notebook-tab-panel-in {
+  from {
+    opacity: 0.72;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.todo-item.is-subtask {
+  padding-left: 6px;
+  background: linear-gradient(
+    90deg,
+    rgba(196, 92, 38, 0.12) 0,
+    transparent 12px
+  );
+}
+
+.todo-item.is-subtask .todo-title {
+  font-size: 14px;
+}
+
+:root[data-theme='dark'] .todo-item.is-subtask {
+  background: linear-gradient(
+    90deg,
+    rgba(232, 168, 124, 0.12) 0,
+    transparent 12px
+  );
 }
 
 /* Single panel: all tasks share one list surface */
@@ -360,9 +638,58 @@ h2 {
   justify-content: space-between;
   gap: 8px;
   min-height: 52px;
-  padding: 10px 8px 10px 12px;
+  padding: 10px 8px 10px 8px;
   border-bottom: 1px solid var(--border);
   background: transparent;
+}
+
+.todo-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 28px;
+  min-height: 44px;
+  margin: -6px 0;
+  padding: 0 2px;
+  color: var(--ink-muted);
+  border-radius: 8px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.todo-drag-handle:active {
+  cursor: grabbing;
+}
+
+.todo-drag-handle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.todo-drag-icon {
+  width: 18px;
+  height: 18px;
+  opacity: 0.65;
+}
+
+@media (hover: hover) {
+  .todo-drag-handle:hover .todo-drag-icon {
+    opacity: 1;
+  }
+}
+
+.todo-item.is-dragging {
+  opacity: 0.45;
+}
+
+.todo-item.drag-before {
+  box-shadow: inset 0 3px 0 0 var(--accent);
+}
+
+.todo-item.drag-after {
+  box-shadow: inset 0 -3px 0 0 var(--accent);
 }
 
 .todo-item:last-child {
@@ -393,6 +720,10 @@ h2 {
   margin-top: 3px;
   accent-color: var(--accent);
   cursor: pointer;
+}
+
+:root[data-theme='dark'] .todo-checkbox {
+  accent-color: color-mix(in srgb, var(--accent) 82%, var(--paper-card));
 }
 
 .todo-body {
@@ -456,6 +787,38 @@ h2 {
 }
 
 .todo-delete:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.todo-subtask {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0;
+  margin: 0;
+  color: var(--ink-muted);
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.todo-subtask-icon {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+.todo-subtask:hover {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.todo-subtask:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }

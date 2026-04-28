@@ -1,5 +1,7 @@
 /** @typedef {import('./todos.js').Todo} Todo */
 
+import { reorderTodosCanonical } from './todos.js'
+
 const addedFormatter = new Intl.DateTimeFormat(undefined, {
   month: 'short',
   day: 'numeric',
@@ -28,8 +30,10 @@ function formatAddedAt(iso) {
 export function renderTodoList(listEl, template, todos) {
   listEl.replaceChildren()
 
+  const ordered = reorderTodosCanonical(todos)
   const frag = document.createDocumentFragment()
-  for (const todo of todos) {
+
+  for (const todo of ordered) {
     const node = template.content.cloneNode(true)
     const li = /** @type {HTMLElement | null} */ (node.querySelector('.todo-item'))
     const checkbox = /** @type {HTMLInputElement | null} */ (
@@ -40,10 +44,21 @@ export function renderTodoList(listEl, template, todos) {
     const delBtn = /** @type {HTMLButtonElement | null} */ (
       node.querySelector('.todo-delete')
     )
+    const subtaskBtn = /** @type {HTMLButtonElement | null} */ (
+      node.querySelector('.todo-subtask')
+    )
+    const dragHandle = /** @type {HTMLElement | null} */ (
+      node.querySelector('.todo-drag-handle')
+    )
+    if (!li || !checkbox || !titleEl || !timeEl || !delBtn || !subtaskBtn || !dragHandle)
+      continue
 
-    if (!li || !checkbox || !titleEl || !timeEl || !delBtn) continue
-
+    const isSub = Boolean(todo.parentId)
     li.dataset.todoId = todo.id
+    if (isSub) {
+      li.classList.add('is-subtask')
+      li.dataset.parentId = todo.parentId || ''
+    }
     checkbox.checked = todo.done
     checkbox.setAttribute('aria-label', `Mark “${todo.title}” complete`)
     titleEl.textContent = todo.title
@@ -58,6 +73,22 @@ export function renderTodoList(listEl, template, todos) {
     const delLabel = `Delete “${todo.title}”`
     delBtn.setAttribute('aria-label', delLabel)
     delBtn.setAttribute('title', delLabel)
+
+    const subtaskLabel = `Add subtask for “${todo.title}”`
+    subtaskBtn.setAttribute('aria-label', subtaskLabel)
+    subtaskBtn.setAttribute('title', subtaskLabel)
+    if (isSub) {
+      subtaskBtn.hidden = true
+      subtaskBtn.setAttribute('aria-hidden', 'true')
+    }
+
+    const reorderLabel = `Drag to reorder: “${todo.title}”`
+    dragHandle.setAttribute('aria-label', reorderLabel)
+    dragHandle.setAttribute('title', reorderLabel)
+    if (isSub) {
+      dragHandle.hidden = true
+      dragHandle.setAttribute('aria-hidden', 'true')
+    }
 
     frag.appendChild(node)
   }
