@@ -14,10 +14,7 @@ import {
   removeTodoById,
 } from './todos.js'
 import {
-  MAX_TABS,
-  addTab,
   loadNotebookState,
-  removeTab,
   saveNotebookState,
   setActiveTab,
   tabFaceColor,
@@ -132,15 +129,6 @@ function mount() {
                 role="tablist"
                 aria-label="Task folders"
               ></div>
-              <button
-                type="button"
-                class="notebook-tab-add"
-                id="notebook-tab-add"
-                title="Add folder tab"
-                aria-label="Add folder tab"
-              >
-                +
-              </button>
             </div>
             <div
               class="notebook-tab-panel"
@@ -174,9 +162,6 @@ function mount() {
     root.querySelector('#notebook-tab-panel')
   )
   const tabsEl = /** @type {HTMLElement} */ (root.querySelector('.notebook-tabs'))
-  const tabAddBtn = /** @type {HTMLButtonElement} */ (
-    root.querySelector('#notebook-tab-add')
-  )
   const themeAuto = /** @type {HTMLButtonElement} */ (root.querySelector('#theme-auto'))
   const themeDay = /** @type {HTMLButtonElement} */ (root.querySelector('#theme-day'))
   const themeNight = /** @type {HTMLButtonElement} */ (
@@ -237,36 +222,18 @@ function mount() {
       labelSpan.textContent = tab.label.toUpperCase()
       tabBtn.appendChild(labelSpan)
 
-      const removeBtn = document.createElement('button')
-      removeBtn.type = 'button'
-      removeBtn.className = 'notebook-tab-remove'
-      removeBtn.setAttribute('aria-label', `Remove folder “${tab.label}”`)
-      removeBtn.setAttribute('title', `Remove “${tab.label}”`)
-      removeBtn.setAttribute('data-remove-tab', tab.id)
-      removeBtn.innerHTML =
-        '<span class="sr-only">Remove folder</span><span aria-hidden="true">×</span>'
-
       const wrap = document.createElement('div')
       wrap.className = 'notebook-tab-wrap'
+      /* First tab highest among inactives so each tab tucks under the one to its left. */
       const stack = notebook.tabs.length - 1
       wrap.style.zIndex = isActive
-        ? '35'
-        : String(14 + Math.max(0, stack - index))
+        ? '50'
+        : String(10 + Math.max(0, stack - index))
       wrap.appendChild(tabBtn)
-      if (notebook.tabs.length > 1) {
-        wrap.appendChild(removeBtn)
-      }
       tabsEl.appendChild(wrap)
     })
 
     syncTabPanelAttrs()
-    tabAddBtn.disabled = notebook.tabs.length >= MAX_TABS
-    tabAddBtn.setAttribute(
-      'aria-label',
-      notebook.tabs.length >= MAX_TABS
-        ? 'Maximum number of tabs reached'
-        : 'Add folder tab',
-    )
 
     const active = notebook.tabs.find((t) => t.id === notebook.activeTabId)
     listHeading.textContent = active ? active.label : 'Tasks'
@@ -395,23 +362,6 @@ function mount() {
   })
 
   listEl.addEventListener('click', (e) => {
-    const addSub = /** @type {HTMLElement | null} */ (
-      /** @type {HTMLElement} */ (e.target).closest('.todo-add-subtask')
-    )
-    if (addSub instanceof HTMLButtonElement && !addSub.hidden) {
-      const li = addSub.closest('.todo-item')
-      if (!(li instanceof HTMLElement) || li.classList.contains('is-subtask')) return
-      const parentId = li.dataset.todoId
-      if (!parentId) return
-      const title = window.prompt('Sub-task title')
-      if (!title || !title.trim()) return
-      const todos = currentTodos()
-      setCurrentTodos(appendTodo(todos, createTodo(title, parentId)))
-      playPinSound()
-      persistAndRender()
-      return
-    }
-
     const btn = /** @type {HTMLElement | null} */ (
       /** @type {HTMLElement} */ (e.target).closest('.todo-delete')
     )
@@ -424,20 +374,6 @@ function mount() {
   })
 
   tabsEl.addEventListener('click', (e) => {
-    const removeBtn = /** @type {HTMLElement | null} */ (
-      /** @type {HTMLElement} */ (e.target).closest('[data-remove-tab]')
-    )
-    if (removeBtn instanceof HTMLButtonElement) {
-      e.preventDefault()
-      e.stopPropagation()
-      const id = removeBtn.getAttribute('data-remove-tab')
-      if (!id) return
-      notebook = removeTab(notebook, id)
-      triggerTabPanelAnimation()
-      persistAndRender()
-      return
-    }
-
     const tabBtn = /** @type {HTMLElement | null} */ (
       /** @type {HTMLElement} */ (e.target).closest('.notebook-tab')
     )
@@ -445,17 +381,6 @@ function mount() {
     const id = tabBtn.getAttribute('data-tab-id')
     if (!id || id === notebook.activeTabId) return
     notebook = setActiveTab(notebook, id)
-    triggerTabPanelAnimation()
-    persistAndRender()
-  })
-
-  tabAddBtn.addEventListener('click', () => {
-    if (notebook.tabs.length >= MAX_TABS) return
-    const name = window.prompt('New folder name')
-    if (!name || !name.trim()) return
-    const next = addTab(notebook, name.trim())
-    if (!next) return
-    notebook = next
     triggerTabPanelAnimation()
     persistAndRender()
   })

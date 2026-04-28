@@ -47,10 +47,6 @@ export function renderTodoList(listEl, template, todos) {
     const dragHandle = /** @type {HTMLElement | null} */ (
       node.querySelector('.todo-drag-handle')
     )
-    const addSubBtn = /** @type {HTMLButtonElement | null} */ (
-      node.querySelector('.todo-add-subtask')
-    )
-
     if (!li || !checkbox || !titleEl || !timeEl || !delBtn || !dragHandle) continue
 
     const isSub = Boolean(todo.parentId)
@@ -80,17 +76,6 @@ export function renderTodoList(listEl, template, todos) {
     if (isSub) {
       dragHandle.hidden = true
       dragHandle.setAttribute('aria-hidden', 'true')
-    }
-
-    if (addSubBtn) {
-      if (isSub) {
-        addSubBtn.hidden = true
-        addSubBtn.setAttribute('aria-hidden', 'true')
-      } else {
-        const subLabel = `Add sub-task under “${todo.title}”`
-        addSubBtn.setAttribute('aria-label', subLabel)
-        addSubBtn.setAttribute('title', subLabel)
-      }
     }
 
     frag.appendChild(node)

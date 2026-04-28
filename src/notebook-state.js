@@ -25,14 +25,17 @@ export const DEFAULT_TAB_DEFS = [
   { id: 'groceries', label: 'Groceries' },
 ]
 
-/** Hex fills for tab faces (light theme); inactive uses softer variant in CSS */
+/**
+ * Tab accent hues — mixed in CSS with paper-card tone for inactive tabs.
+ * Personal / Groceries: warm pastel green & blue aligned with --paper-card (#fff9eb).
+ */
 export const TAB_FACE_COLORS = [
-  '#e891a3',
-  '#e8b4b8',
-  '#f0c4b8',
-  '#7ec4c4',
-  '#c49fe8',
-  '#9fd4e8',
+  '#e8a8a8',
+  '#b8d4b8',
+  '#b8d4e8',
+  '#a8d4c8',
+  '#c4d8e8',
+  '#c8dce0',
 ]
 
 /**
@@ -196,39 +199,6 @@ export function addTab(state, label) {
     tabs,
     todosByTabId,
     activeTabId: id,
-  }
-}
-
-/**
- * @param {NotebookState} state
- * @param {string} tabId
- * @returns {NotebookState}
- */
-export function removeTab(state, tabId) {
-  if (state.tabs.length <= 1) return state
-  const idx = state.tabs.findIndex((t) => t.id === tabId)
-  if (idx === -1) return state
-
-  const orphanTodos = state.todosByTabId[tabId] || []
-  const nextTabs = state.tabs.filter((t) => t.id !== tabId)
-  const fallbackId = nextTabs[0].id
-
-  const todosByTabId = { ...state.todosByTabId }
-  delete todosByTabId[tabId]
-  todosByTabId[fallbackId] = [
-    ...(todosByTabId[fallbackId] || []),
-    ...orphanTodos,
-  ]
-  todosByTabId[fallbackId] = normalizeTodoList(todosByTabId[fallbackId])
-
-  let activeTabId = state.activeTabId
-  if (activeTabId === tabId) activeTabId = fallbackId
-
-  return {
-    ...state,
-    tabs: nextTabs,
-    todosByTabId,
-    activeTabId,
   }
 }
 
