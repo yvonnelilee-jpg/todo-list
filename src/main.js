@@ -6,17 +6,17 @@ import {
   setThemePreference,
 } from './theme.js'
 import { renderTodoList } from './render.js'
-import { createTodo, loadTodos, saveTodos } from './todos.js'
+import { createTodo, deleteTodo, loadTodos, updateTodoDone } from './todos.js'
 import { playCrinkleSound, playPinSound } from './sounds.js'
 
 /** @typedef {import('./todos.js').Todo} Todo */
 
 /** @type {Todo[]} */
-let todos = loadTodos()
+let todos = []
 
 initThemeFromStorage()
 
-function mount() {
+async function mount() {
   const root = document.querySelector('#app')
   const template = document.querySelector('#todo-item-template')
   if (!root || !(template instanceof HTMLTemplateElement)) return
@@ -135,24 +135,33 @@ function mount() {
     listEl.hidden = todos.length === 0
   }
 
-  function persistAndRender() {
-    saveTodos(todos)
+  function render() {
     renderTodoList(listEl, template, todos)
     syncEmptyState()
   }
 
-  form.addEventListener('submit', (e) => {
+  async function refreshTodos() {
+    todos = await loadTodos()
+    render()
+  }
+
+  form.addEventListener('submit', async (e) => {
     e.preventDefault()
     const title = input.value
     if (!title.trim()) return
-    todos.push(createTodo(title))
-    input.value = ''
-    playPinSound()
-    persistAndRender()
-    input.focus()
+    try {
+      const created = await createTodo(title)
+      todos.push(created)
+      input.value = ''
+      playPinSound()
+      render()
+      input.focus()
+    } catch (error) {
+      console.error('Failed to create todo', error)
+    }
   })
 
-  listEl.addEventListener('change', (e) => {
+  listEl.addEventListener('change', async (e) => {
     const target = /** @type {HTMLElement} */ (e.target)
     if (!(target instanceof HTMLInputElement) || target.type !== 'checkbox') return
     const id = target.closest('[data-todo-id]')?.getAttribute('data-todo-id')
@@ -161,23 +170,40 @@ function mount() {
     if (!todo) return
     const wasDone = todo.done
     todo.done = target.checked
-    if (todo.done && !wasDone) {
-      playCrinkleSound()
+    try {
+      await updateTodoDone(id, target.checked)
+      if (todo.done && !wasDone) {
+        playCrinkleSound()
+      }
+      render()
+    } catch (error) {
+      todo.done = wasDone
+      target.checked = wasDone
+      console.error('Failed to update todo', error)
     }
-    persistAndRender()
   })
 
-  listEl.addEventListener('click', (e) => {
+  listEl.addEventListener('click', async (e) => {
     const btn = /** @type {HTMLElement} */ (e.target).closest('.todo-delete')
     if (!(btn instanceof HTMLButtonElement)) return
     const id = btn.closest('[data-todo-id]')?.getAttribute('data-todo-id')
     if (!id) return
-    todos = todos.filter((t) => t.id !== id)
-    persistAndRender()
+    try {
+      await deleteTodo(id)
+      todos = todos.filter((t) => t.id !== id)
+      render()
+    } catch (error) {
+      console.error('Failed to delete todo', error)
+    }
   })
 
-  persistAndRender()
+  try {
+    await refreshTodos()
+  } catch (error) {
+    console.error('Failed to load todos', error)
+    render()
+  }
   input.focus()
 }
 
-mount()
+void mount()

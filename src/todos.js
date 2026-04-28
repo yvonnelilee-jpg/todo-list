@@ -1,82 +1,70 @@
+import { supabase } from './supabase.js'
+
 /**
  * @typedef {{ id: string, title: string, done: boolean, createdAt: string }} Todo
  */
 
-const STORAGE_KEY = 'task-notebook-todos'
+/**
+ * @typedef {{ id: string, title: string, done: boolean, created_at: string }} TodoRow
+ */
 
 /**
- * @param {unknown} value
- * @returns {boolean}
+ * @param {TodoRow} row
+ * @returns {Todo}
  */
-function isLegacyTodoShape(value) {
-  if (value === null || typeof value !== 'object') return false
-  const o = /** @type {Record<string, unknown>} */ (value)
-  return (
-    typeof o.id === 'string' &&
-    typeof o.title === 'string' &&
-    typeof o.done === 'boolean' &&
-    (o.createdAt === undefined || typeof o.createdAt === 'string')
-  )
-}
-
-/**
- * @returns {Todo[]}
- */
-export function loadTodos() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return []
-    const parsed = JSON.parse(raw)
-    if (!Array.isArray(parsed)) return []
-    let mutated = false
-    const list = parsed.filter(isLegacyTodoShape).map((item) => {
-      const o = /** @type {Record<string, unknown>} */ (item)
-      if (typeof o.createdAt !== 'string') {
-        mutated = true
-        return /** @type {Todo} */ ({
-          id: o.id,
-          title: o.title,
-          done: o.done,
-          createdAt: new Date().toISOString(),
-        })
-      }
-      return /** @type {Todo} */ ({
-        id: o.id,
-        title: o.title,
-        done: o.done,
-        createdAt: o.createdAt,
-      })
-    })
-    if (mutated) {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(list))
-      } catch {
-        /* ignore quota / private mode */
-      }
-    }
-    return list
-  } catch {
-    return []
+function mapRowToTodo(row) {
+  return {
+    id: row.id,
+    title: row.title,
+    done: row.done,
+    createdAt: row.created_at,
   }
 }
 
 /**
- * @param {Todo[]} todos
+ * @returns {Promise<Todo[]>}
  */
-export function saveTodos(todos) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(todos))
+export async function loadTodos() {
+  const { data, error } = await supabase
+    .from('todos')
+    .select('id,title,done,created_at')
+    .order('created_at', { ascending: true })
+
+  if (error) throw error
+  return (data ?? []).map(mapRowToTodo)
 }
 
 /**
  * @param {string} title
- * @returns {Todo}
+ * @returns {Promise<Todo>}
  */
-export function createTodo(title) {
+export async function createTodo(title) {
   const t = title.trim()
-  return {
-    id: crypto.randomUUID(),
-    title: t,
-    done: false,
-    createdAt: new Date().toISOString(),
-  }
+  const { data, error } = await supabase
+    .from('todos')
+    .insert({ title: t, done: false })
+    .select('id,title,done,created_at')
+    .single()
+
+  if (error) throw error
+  return mapRowToTodo(data)
+}
+
+/**
+ * @param {string} id
+ * @param {boolean} done
+ * @returns {Promise<void>}
+ */
+export async function updateTodoDone(id, done) {
+  const { error } = await supabase.from('todos').update({ done }).eq('id', id)
+  if (error) throw error
+}
+
+/**
+ * @param {string} id
+ * @returns {Promise<void>}
+ */
+export async function deleteTodo(id) {
+  const { error } = await supabase.from('todos').delete().eq('id', id)
+  if (error) throw error
 }
