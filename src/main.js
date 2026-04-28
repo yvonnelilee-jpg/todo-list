@@ -135,11 +135,9 @@ function mount() {
               id="notebook-tab-panel"
               role="tabpanel"
               tabindex="0"
-              aria-labelledby="list-heading"
             >
               <div class="notebook-folder-inner">
-                <section class="list-section" aria-labelledby="list-heading">
-                  <h2 id="list-heading" class="list-heading">Tasks</h2>
+                <section class="list-section">
                   <ul id="todo-list" class="todo-list" role="list"></ul>
                   <p id="todo-empty" class="todo-empty" hidden>No tasks yet — add one above.</p>
                 </section>
@@ -155,9 +153,6 @@ function mount() {
   const input = /** @type {HTMLInputElement} */ (root.querySelector('#todo-input'))
   const listEl = /** @type {HTMLUListElement} */ (root.querySelector('#todo-list'))
   const emptyEl = /** @type {HTMLElement} */ (root.querySelector('#todo-empty'))
-  const listHeading = /** @type {HTMLHeadingElement} */ (
-    root.querySelector('#list-heading')
-  )
   const tabPanel = /** @type {HTMLElement} */ (
     root.querySelector('#notebook-tab-panel')
   )
@@ -236,7 +231,11 @@ function mount() {
     syncTabPanelAttrs()
 
     const active = notebook.tabs.find((t) => t.id === notebook.activeTabId)
-    listHeading.textContent = active ? active.label : 'Tasks'
+    if (active) {
+      tabPanel.setAttribute('aria-labelledby', `tab-${active.id}`)
+    } else {
+      tabPanel.removeAttribute('aria-labelledby')
+    }
   }
 
   function syncEmptyState() {

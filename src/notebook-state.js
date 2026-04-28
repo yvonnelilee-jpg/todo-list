@@ -26,16 +26,15 @@ export const DEFAULT_TAB_DEFS = [
 ]
 
 /**
- * Tab accent hues — mixed in CSS with paper-card tone for inactive tabs.
- * Personal / Groceries: warm pastel green & blue aligned with --paper-card (#fff9eb).
+ * Tab accent stripes — orange / red family, shared saturation & lightness (HSL).
  */
 export const TAB_FACE_COLORS = [
-  '#e8a8a8',
-  '#b8d4b8',
-  '#b8d4e8',
-  '#a8d4c8',
-  '#c4d8e8',
-  '#c8dce0',
+  'hsl(12, 78%, 54%)',
+  'hsl(32, 78%, 54%)',
+  'hsl(22, 78%, 54%)',
+  'hsl(6, 78%, 54%)',
+  'hsl(38, 78%, 54%)',
+  'hsl(18, 78%, 54%)',
 ]
 
 /**

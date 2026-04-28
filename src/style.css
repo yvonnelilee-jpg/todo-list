@@ -337,14 +337,6 @@ h2 {
   min-height: 0;
 }
 
-.list-heading {
-  margin: 0;
-  font-size: 14px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--ink-muted);
-}
-
 /* --- Phase 2: manila folder tabs + thin folder frame --- */
 
 .notebook-tabs-shell {
