@@ -21,11 +21,9 @@ import { playCrinkleSound, playDeleteSound, playPinSound } from './sounds.js'
 import {
   ensureSession,
   getCurrentUser,
-  maybeRunPendingMerge,
   onAuthStateChange,
   rememberAnonymousUser,
   setStoredAnonymousUserId,
-  signInWithMagicLink,
   signInWithPassword,
   signOutToAnonymousSession,
   signUpWithPassword,
@@ -102,10 +100,10 @@ async function mount() {
               role="group"
               aria-label="Sign in or create an account"
             >
-              <button type="button" class="auth-btn" id="auth-create">Create account</button>
-              <button type="button" class="auth-btn" id="auth-login">Login</button>
+              <button type="button" class="auth-btn btn-size-m" id="auth-create">Create account</button>
+              <button type="button" class="auth-btn btn-size-m" id="auth-login">Login</button>
             </div>
-            <button type="button" class="auth-btn auth-toolbar-solo" id="auth-logout" hidden>
+            <button type="button" class="auth-btn auth-toolbar-solo btn-size-m" id="auth-logout" hidden>
               Log out
             </button>
           </div>
@@ -122,7 +120,7 @@ async function mount() {
           >
             <button
               type="button"
-              class="theme-btn"
+              class="theme-btn btn-size-m"
               id="theme-auto"
               data-theme-pref="auto"
               title="Match time of day"
@@ -136,7 +134,7 @@ async function mount() {
             </button>
             <button
               type="button"
-              class="theme-btn"
+              class="theme-btn btn-size-m"
               id="theme-day"
               data-theme-pref="light"
               title="Day — light theme"
@@ -150,7 +148,7 @@ async function mount() {
             </button>
             <button
               type="button"
-              class="theme-btn"
+              class="theme-btn btn-size-m"
               id="theme-night"
               data-theme-pref="dark"
               title="Night — dark theme"
@@ -179,7 +177,7 @@ async function mount() {
             maxlength="500"
             required
           />
-          <button type="submit" class="quick-add-submit">Add</button>
+          <button type="submit" class="quick-add-submit btn-size-l">Add</button>
         </form>
 
         <div class="notebook-tabs-shell">
@@ -212,7 +210,7 @@ async function mount() {
       <div class="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
         <div class="auth-modal-head">
           <h2 id="auth-modal-title" class="auth-modal-title">Account</h2>
-          <button type="button" class="auth-close" id="auth-modal-close" aria-label="Close authentication dialog">×</button>
+          <button type="button" class="auth-close btn-size-s" id="auth-modal-close" aria-label="Close authentication dialog">×</button>
         </div>
         <form id="auth-form" class="auth-form">
           <label class="auth-label" for="auth-email">Email</label>
@@ -221,8 +219,7 @@ async function mount() {
           <input id="auth-password" class="auth-input" type="password" autocomplete="current-password" minlength="6" />
           <p id="auth-status" class="auth-status" aria-live="polite"></p>
           <div class="auth-form-actions">
-            <button type="submit" class="quick-add-submit" id="auth-submit-btn">Login</button>
-            <button type="button" class="auth-btn" id="auth-magic-link-btn">Send magic link</button>
+            <button type="submit" class="quick-add-submit btn-size-m" id="auth-submit-btn">Login</button>
           </div>
         </form>
       </div>
@@ -256,9 +253,6 @@ async function mount() {
   const authPassword = /** @type {HTMLInputElement} */ (root.querySelector('#auth-password'))
   const authStatus = /** @type {HTMLElement} */ (root.querySelector('#auth-status'))
   const authSubmitBtn = /** @type {HTMLButtonElement} */ (root.querySelector('#auth-submit-btn'))
-  const authMagicLinkBtn = /** @type {HTMLButtonElement} */ (
-    root.querySelector('#auth-magic-link-btn')
-  )
 
   /** @type {Element | null} */
   let authModalReturnFocus = null
@@ -272,12 +266,24 @@ async function mount() {
     authStatus.textContent = message
   }
 
+  /**
+   * @param {unknown} error
+   * @param {string} fallback
+   * @returns {string}
+   */
+  function authErrorMessage(error, fallback) {
+    if (error && typeof error === 'object' && 'message' in error) {
+      const message = String(error.message || '').trim()
+      if (message) return message
+    }
+    return fallback
+  }
+
   function applyAuthMode(mode) {
     authMode = mode
     const isLogin = mode === 'login'
     authModalTitle.textContent = isLogin ? 'Login' : 'Create account'
     authSubmitBtn.textContent = isLogin ? 'Login' : 'Signup'
-    authMagicLinkBtn.hidden = !isLogin
     authPassword.autocomplete = isLogin ? 'current-password' : 'new-password'
     authPassword.required = true
     setAuthStatus('')
@@ -376,24 +382,6 @@ async function mount() {
     }
   })
 
-  authMagicLinkBtn.addEventListener('click', async () => {
-    const email = authEmail.value.trim()
-    if (!email) {
-      setAuthStatus('Enter your email first.')
-      return
-    }
-    authMagicLinkBtn.disabled = true
-    try {
-      await signInWithMagicLink({ email })
-      setAuthStatus('Magic link sent. Check your inbox.')
-    } catch (error) {
-      setAuthStatus('Unable to send magic link right now.')
-      console.error('Failed to send magic link', error)
-    } finally {
-      authMagicLinkBtn.disabled = false
-    }
-  })
-
   authForm.addEventListener('submit', async (e) => {
     e.preventDefault()
     const email = authEmail.value.trim()
@@ -406,20 +394,31 @@ async function mount() {
     try {
       if (authMode === 'login') {
         await signInWithPassword({ email, password })
-      } else {
-        await signUpWithPassword({ email, password })
+        const user = await getCurrentUser()
+        currentUser = user
+        syncAuthBar()
+        closeAuthModal()
+        await reloadNotebookForCurrentUser()
+        return
       }
+
+      const signUpResult = await signUpWithPassword({ email, password })
+      const createdSession = signUpResult.data.session
+      if (!createdSession) {
+        setAuthStatus('Account created. Check your email to confirm, then log in.')
+        authPassword.value = ''
+        return
+      }
+
       const user = await getCurrentUser()
       currentUser = user
       syncAuthBar()
       closeAuthModal()
       await reloadNotebookForCurrentUser()
     } catch (error) {
-      setAuthStatus(
-        authMode === 'login'
-          ? 'Login failed. Check your credentials.'
-          : 'Could not create account with those details.',
-      )
+      setAuthStatus(authErrorMessage(error, authMode === 'login'
+        ? 'Login failed. Check your credentials.'
+        : 'Could not create account with those details.'))
       console.error('Auth submit failed', error)
     } finally {
       authSubmitBtn.disabled = false
@@ -448,7 +447,7 @@ async function mount() {
       const isActive = tab.id === notebook.activeTabId
       const tabBtn = document.createElement('button')
       tabBtn.type = 'button'
-      tabBtn.className = 'notebook-tab'
+      tabBtn.className = 'notebook-tab btn-size-m'
       tabBtn.setAttribute('role', 'tab')
       tabBtn.setAttribute('data-tab-id', tab.id)
       tabBtn.setAttribute('aria-selected', isActive ? 'true' : 'false')
@@ -679,7 +678,6 @@ async function mount() {
   try {
     const initialSession = await ensureSession()
     rememberAnonymousUser(initialSession)
-    await maybeRunPendingMerge()
     currentUser = await getCurrentUser()
     if (isAnonymousUser(currentUser)) {
       setStoredAnonymousUserId(currentUser.id)
@@ -694,7 +692,6 @@ async function mount() {
   onAuthStateChange(async (_event, session) => {
     rememberAnonymousUser(session)
     try {
-      await maybeRunPendingMerge()
       currentUser = session?.user ?? null
       if (isAnonymousUser(currentUser)) {
         setStoredAnonymousUserId(currentUser.id)

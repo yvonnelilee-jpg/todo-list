@@ -12,7 +12,22 @@ const configuredAppUrl = import.meta.env.VITE_APP_URL
  */
 function getAuthRedirectUrl() {
   const fallbackOrigin = window.location.origin
-  const base = configuredAppUrl && configuredAppUrl.trim() ? configuredAppUrl : fallbackOrigin
+  const configured = configuredAppUrl && configuredAppUrl.trim() ? configuredAppUrl.trim() : ''
+  let base = configured || fallbackOrigin
+  if (configured) {
+    try {
+      const configuredUrl = new URL(configured)
+      const configuredHost = configuredUrl.hostname.toLowerCase()
+      const currentHost = window.location.hostname.toLowerCase()
+      const configuredIsLocal = configuredHost === 'localhost' || configuredHost === '127.0.0.1'
+      const currentIsLocal = currentHost === 'localhost' || currentHost === '127.0.0.1'
+      if (configuredIsLocal && !currentIsLocal) {
+        base = fallbackOrigin
+      }
+    } catch {
+      base = fallbackOrigin
+    }
+  }
   return new URL('/', base).toString()
 }
 
@@ -118,24 +133,6 @@ export async function signInWithPassword(input) {
 }
 
 /**
- * @param {{ email: string }} input
- */
-export async function signInWithMagicLink(input) {
-  const sourceAnonId = getStoredAnonymousUserId()
-  const result = await supabase.auth.signInWithOtp({
-    email: input.email,
-    options: {
-      emailRedirectTo: getAuthRedirectUrl(),
-    },
-  })
-  if (result.error) throw result.error
-  if (sourceAnonId) {
-    window.localStorage.setItem('todoList.pendingMergeSourceUserId', sourceAnonId)
-  }
-  return result
-}
-
-/**
  * @returns {Promise<void>}
  */
 export async function signOutToAnonymousSession() {
@@ -158,14 +155,4 @@ export async function mergeAnonymousIntoCurrentUser(sourceUserId) {
   })
   if (error) throw error
   setStoredAnonymousUserId(null)
-  window.localStorage.removeItem('todoList.pendingMergeSourceUserId')
-}
-
-/**
- * @returns {Promise<void>}
- */
-export async function maybeRunPendingMerge() {
-  const pendingSource = window.localStorage.getItem('todoList.pendingMergeSourceUserId')
-  if (!pendingSource) return
-  await mergeAnonymousIntoCurrentUser(pendingSource)
 }
