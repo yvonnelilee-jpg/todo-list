@@ -82,7 +82,7 @@
   /* Framed graph-paper notebook */
   --app-canvas: var(--paper-card);
   --notebook-radius: clamp(18px, 3.2vw, 28px);
-  --notebook-border-w: clamp(10px, 1.8vw, 16px);
+  --notebook-border-w: clamp(4px, 0.75vw, 8px);
   --notebook-frame: #cf3838;
   --notebook-paper: #fdfcf8;
   --notebook-grid-size: 22px;
