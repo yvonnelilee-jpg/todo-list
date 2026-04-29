@@ -159,8 +159,9 @@ h2 {
     ),
     repeating-linear-gradient(
       0deg,
-      var(--notebook-grid-line) 0 1px,
-      transparent 1px var(--notebook-grid-size)
+      transparent 0 calc(var(--notebook-grid-size) - 1px),
+      var(--notebook-grid-line) calc(var(--notebook-grid-size) - 1px)
+        var(--notebook-grid-size)
     );
   -webkit-mask-image: linear-gradient(
     to bottom,
@@ -195,14 +196,16 @@ h2 {
 }
 
 .auth-strip {
+  box-sizing: content-box;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
   margin-bottom: calc(var(--ui-grid) * 0.55);
-  padding-bottom: calc(var(--ui-grid) * 0.45);
-  border-bottom: 1px solid var(--border);
+  padding-bottom: 24px;
+  border-bottom: none;
+  border-image: none;
 }
 
 .auth-user {
@@ -422,6 +425,7 @@ h2 {
 
 .lede {
   margin: 0;
+  padding-top: 8px;
   line-height: var(--ui-grid);
   color: color-mix(in srgb, var(--ink-muted) 92%, var(--notebook-paper));
   font-size: 16px;

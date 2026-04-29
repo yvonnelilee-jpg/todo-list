@@ -1,6 +1,20 @@
 import { supabase } from './supabase.js'
 
 const ANON_USER_ID_KEY = 'todoList.anonymousUserId'
+const configuredAppUrl = import.meta.env.VITE_APP_URL
+
+/**
+ * Build a stable redirect URL for auth emails.
+ *
+ * Prefer explicit `VITE_APP_URL` so production emails never point at localhost.
+ *
+ * @returns {string}
+ */
+function getAuthRedirectUrl() {
+  const fallbackOrigin = window.location.origin
+  const base = configuredAppUrl && configuredAppUrl.trim() ? configuredAppUrl : fallbackOrigin
+  return new URL('/', base).toString()
+}
 
 /**
  * @returns {Promise<import('@supabase/supabase-js').Session | null>}
@@ -80,6 +94,9 @@ export async function signUpWithPassword(input) {
   const result = await supabase.auth.signUp({
     email: input.email,
     password: input.password,
+    options: {
+      emailRedirectTo: getAuthRedirectUrl(),
+    },
   })
   if (result.error) throw result.error
   await mergeAnonymousIntoCurrentUser(sourceAnonId)
@@ -108,7 +125,7 @@ export async function signInWithMagicLink(input) {
   const result = await supabase.auth.signInWithOtp({
     email: input.email,
     options: {
-      emailRedirectTo: window.location.href,
+      emailRedirectTo: getAuthRedirectUrl(),
     },
   })
   if (result.error) throw result.error

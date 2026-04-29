@@ -103,7 +103,7 @@ async function mount() {
               aria-label="Sign in or create an account"
             >
               <button type="button" class="auth-btn" id="auth-create">Create account</button>
-              <button type="button" class="auth-btn" id="auth-login">Log in</button>
+              <button type="button" class="auth-btn" id="auth-login">Login</button>
             </div>
             <button type="button" class="auth-btn auth-toolbar-solo" id="auth-logout" hidden>
               Log out
