@@ -129,7 +129,7 @@ h2 {
   isolation: isolate;
   width: 100%;
   max-width: 520px;
-  padding: clamp(56px, 9vw, 88px) clamp(48px, 8vw, 80px) clamp(72px, 10vw, 104px);
+  padding: clamp(28px, 5vw, 56px) clamp(48px, 8vw, 80px) clamp(72px, 10vw, 104px);
   background-color: var(--notebook-paper);
   /* Inset ring instead of border: thick border + radius often leaves corner gaps */
   border: none;
@@ -192,6 +192,145 @@ h2 {
 
 .notebook-header {
   margin-bottom: var(--ui-grid);
+}
+
+.auth-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: calc(var(--ui-grid) * 0.55);
+  padding-bottom: calc(var(--ui-grid) * 0.45);
+  border-bottom: 1px solid var(--border);
+}
+
+.auth-user {
+  font-size: 14px;
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+  word-break: break-all;
+}
+
+.auth-strip-actions {
+  display: inline-flex;
+  align-items: stretch;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.auth-strip-actions .auth-btn[hidden] {
+  display: none !important;
+}
+
+/* Header segmented control — matches `.theme-toolbar` / `.theme-btn` */
+.auth-toolbar {
+  display: inline-flex;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--paper-card);
+  box-shadow: var(--shadow);
+}
+
+.auth-toolbar .auth-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 auto;
+  min-height: 44px;
+  min-width: 0;
+  padding: 0 12px;
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  border-right: 1px solid var(--border);
+  background: transparent;
+  color: var(--ink-muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  box-shadow: none;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.auth-toolbar .auth-btn:last-child {
+  border-right: none;
+}
+
+.auth-toolbar .auth-btn[hidden] {
+  display: none !important;
+}
+
+.auth-toolbar .auth-btn:hover {
+  color: var(--ink);
+  background: var(--accent-soft);
+}
+
+.auth-toolbar .auth-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  position: relative;
+  z-index: 1;
+}
+
+.auth-btn {
+  min-height: 38px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--paper-card);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+}
+
+.auth-btn:hover {
+  background: var(--accent-soft);
+}
+
+.auth-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Solo header logout — same framing + 44px height as `.theme-btn` strip */
+.auth-strip .auth-toolbar-solo.auth-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  min-height: 44px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--ink-muted);
+  background: var(--paper-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.auth-strip .auth-toolbar-solo.auth-btn:hover {
+  color: var(--ink);
+  background: var(--accent-soft);
+}
+
+.auth-strip .auth-toolbar-solo.auth-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  position: relative;
+  z-index: 1;
 }
 
 .notebook-header-row {
@@ -786,4 +925,105 @@ h2 {
   background: var(--paper-card);
   border: 1px dashed var(--border);
   border-radius: var(--radius);
+}
+
+.auth-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.28);
+  z-index: 30;
+}
+
+/* Author `display: grid` beats the UA `[hidden]` rule; without this, closing the modal does nothing visually. */
+.auth-modal-backdrop[hidden] {
+  display: none;
+}
+
+.auth-modal {
+  width: min(420px, 100%);
+  background: var(--notebook-paper);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  padding: 18px;
+}
+
+.auth-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.auth-modal-title {
+  margin: 0;
+  font-size: 20px;
+}
+
+.auth-close {
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  border: 1px solid var(--border);
+  background: var(--paper-card);
+  color: var(--ink);
+  border-radius: 10px;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.auth-label {
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+.auth-input {
+  min-height: 42px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--paper-card);
+  color: var(--ink);
+  font: inherit;
+}
+
+.auth-input:focus-visible,
+.auth-close:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.auth-status {
+  min-height: 20px;
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+.auth-form-actions {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.auth-form-actions .quick-add-submit,
+.auth-form-actions .auth-btn {
+  min-height: 48px;
+  padding: 12px 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 0;
 }

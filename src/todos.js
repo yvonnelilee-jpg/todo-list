@@ -1,4 +1,5 @@
 import { supabase } from './supabase.js'
+import { getCurrentUserId } from './auth.js'
 
 /**
  * @typedef {{ id: string, label: string, position: number, createdAt: string }} NotebookTab
@@ -38,20 +39,6 @@ import { supabase } from './supabase.js'
  */
 
 const POSITION_STEP = 1000
-const LEGACY_TAB_ID = 'default'
-
-/** @type {'modern' | 'legacy' | null} */
-let schemaMode = null
-
-/**
- * @returns {Promise<'modern' | 'legacy'>}
- */
-async function detectSchemaMode() {
-  if (schemaMode) return schemaMode
-  const { error } = await supabase.from('tabs').select('id').limit(1)
-  schemaMode = error ? 'legacy' : 'modern'
-  return schemaMode
-}
 
 /**
  * @param {TabRow} row
@@ -86,21 +73,12 @@ function mapRowToTodo(row) {
  * @returns {Promise<NotebookTab[]>}
  */
 export async function loadTabs() {
-  const mode = await detectSchemaMode()
-  if (mode === 'legacy') {
-    return [
-      {
-        id: LEGACY_TAB_ID,
-        label: 'Today',
-        position: POSITION_STEP,
-        createdAt: new Date().toISOString(),
-      },
-    ]
-  }
+  const userId = await getCurrentUserId()
 
   const { data, error } = await supabase
     .from('tabs')
     .select('id,label,position,created_at')
+    .eq('user_id', userId)
     .order('position', { ascending: true })
 
   if (error) throw error
@@ -111,15 +89,14 @@ export async function loadTabs() {
  * @returns {Promise<NotebookTab[]>}
  */
 export async function ensureDefaultTabs() {
-  const mode = await detectSchemaMode()
-  if (mode === 'legacy') return loadTabs()
-
+  const userId = await getCurrentUserId()
   const existing = await loadTabs()
   if (existing.length > 0) return existing
 
   const defaults = ['Work', 'Personal', 'Groceries'].map((label, index) => ({
     label,
     position: (index + 1) * POSITION_STEP,
+    user_id: userId,
   }))
   const { error } = await supabase.from('tabs').insert(defaults)
   if (error) throw error
@@ -131,17 +108,13 @@ export async function ensureDefaultTabs() {
  * @returns {Promise<NotebookTab>}
  */
 export async function createTab(label) {
-  const mode = await detectSchemaMode()
-  if (mode === 'legacy') {
-    throw new Error('Creating tabs requires the new Supabase tabs schema.')
-  }
-
+  const userId = await getCurrentUserId()
   const name = label.trim() || 'New tab'
   const tabs = await loadTabs()
   const lastPos = tabs.length > 0 ? tabs[tabs.length - 1].position : 0
   const { data, error } = await supabase
     .from('tabs')
-    .insert({ label: name, position: lastPos + POSITION_STEP })
+    .insert({ label: name, position: lastPos + POSITION_STEP, user_id: userId })
     .select('id,label,position,created_at')
     .single()
 
@@ -154,12 +127,13 @@ export async function createTab(label) {
  * @returns {Promise<void>}
  */
 export async function deleteTab(tabId) {
-  const mode = await detectSchemaMode()
-  if (mode === 'legacy') {
-    throw new Error('Deleting tabs requires the new Supabase tabs schema.')
-  }
+  const userId = await getCurrentUserId()
 
-  const { error } = await supabase.from('tabs').delete().eq('id', tabId)
+  const { error } = await supabase
+    .from('tabs')
+    .delete()
+    .eq('id', tabId)
+    .eq('user_id', userId)
   if (error) throw error
 }
 
@@ -168,28 +142,12 @@ export async function deleteTab(tabId) {
  * @returns {Promise<Todo[]>}
  */
 export async function loadTodosByTab(tabId) {
-  const mode = await detectSchemaMode()
-  if (mode === 'legacy') {
-    const { data, error } = await supabase
-      .from('todos')
-      .select('id,title,done,created_at')
-      .order('created_at', { ascending: true })
-
-    if (error) throw error
-    return (data ?? []).map((row, index) => ({
-      id: row.id,
-      tabId: LEGACY_TAB_ID,
-      title: row.title,
-      done: row.done,
-      createdAt: row.created_at,
-      parentId: null,
-      position: (index + 1) * POSITION_STEP,
-    }))
-  }
+  const userId = await getCurrentUserId()
 
   const { data, error } = await supabase
     .from('todos')
     .select('id,tab_id,title,done,created_at,parent_id,position')
+    .eq('user_id', userId)
     .eq('tab_id', tabId)
     .order('position', { ascending: true })
 
@@ -203,20 +161,12 @@ export async function loadTodosByTab(tabId) {
  * @returns {Promise<number>}
  */
 async function nextTodoPosition(tabId, parentId) {
-  const mode = await detectSchemaMode()
-  if (mode === 'legacy') {
-    const { data, error } = await supabase
-      .from('todos')
-      .select('created_at')
-      .order('created_at', { ascending: false })
-      .limit(1)
-    if (error) throw error
-    return (data?.length ?? 0) > 0 ? POSITION_STEP * 2 : POSITION_STEP
-  }
+  const userId = await getCurrentUserId()
 
   let q = supabase
     .from('todos')
     .select('position')
+    .eq('user_id', userId)
     .eq('tab_id', tabId)
     .order('position', { ascending: false })
     .limit(1)
@@ -233,30 +183,8 @@ async function nextTodoPosition(tabId, parentId) {
  * @returns {Promise<Todo>}
  */
 export async function createTodo(input) {
-  const mode = await detectSchemaMode()
+  const userId = await getCurrentUserId()
   const title = input.title.trim()
-  if (mode === 'legacy') {
-    const { data, error } = await supabase
-      .from('todos')
-      .insert({
-        title,
-        done: false,
-      })
-      .select('id,title,done,created_at')
-      .single()
-
-    if (error) throw error
-    return {
-      id: data.id,
-      tabId: LEGACY_TAB_ID,
-      title: data.title,
-      done: data.done,
-      createdAt: data.created_at,
-      parentId: null,
-      position: await nextTodoPosition(LEGACY_TAB_ID, null),
-    }
-  }
-
   const parentId = input.parentId ?? null
   const position = await nextTodoPosition(input.tabId, parentId)
 
@@ -268,6 +196,7 @@ export async function createTodo(input) {
       done: false,
       parent_id: parentId,
       position,
+      user_id: userId,
     })
     .select('id,tab_id,title,done,created_at,parent_id,position')
     .single()
@@ -282,7 +211,12 @@ export async function createTodo(input) {
  * @returns {Promise<void>}
  */
 export async function updateTodoDone(id, done) {
-  const { error } = await supabase.from('todos').update({ done }).eq('id', id)
+  const userId = await getCurrentUserId()
+  const { error } = await supabase
+    .from('todos')
+    .update({ done })
+    .eq('id', id)
+    .eq('user_id', userId)
   if (error) throw error
 }
 
@@ -413,10 +347,12 @@ export function normalizeTodoList(todos) {
  * @returns {Promise<void>}
  */
 async function persistTabOrder(tabId, todos) {
+  const userId = await getCurrentUserId()
   const normalized = normalizeTodoList(todos)
   const updates = normalized.map((todo, index) => ({
     id: todo.id,
     tab_id: tabId,
+    user_id: userId,
     parent_id: todo.parentId,
     position: (index + 1) * POSITION_STEP,
   }))
@@ -426,6 +362,7 @@ async function persistTabOrder(tabId, todos) {
       .update({ parent_id: row.parent_id, position: row.position })
       .eq('id', row.id)
       .eq('tab_id', row.tab_id)
+      .eq('user_id', row.user_id)
     if (error) throw error
   }
 }
@@ -445,9 +382,7 @@ export async function moveRootBlockPersist(
   toRootId,
   placeAfter,
 ) {
-  const mode = await detectSchemaMode()
   const next = moveRootBlock(todos, fromRootId, toRootId, placeAfter)
-  if (mode === 'legacy') return normalizeTodoList(next)
   await persistTabOrder(tabId, next)
   return normalizeTodoList(next)
 }
@@ -459,19 +394,19 @@ export async function moveRootBlockPersist(
  * @returns {Promise<void>}
  */
 export async function removeTodoById(id) {
-  const mode = await detectSchemaMode()
-  if (mode === 'legacy') {
-    const { error } = await supabase.from('todos').delete().eq('id', id)
-    if (error) throw error
-    return
-  }
+  const userId = await getCurrentUserId()
 
   const { error: promoteError } = await supabase
     .from('todos')
     .update({ parent_id: null })
+    .eq('user_id', userId)
     .eq('parent_id', id)
   if (promoteError) throw promoteError
 
-  const { error } = await supabase.from('todos').delete().eq('id', id)
+  const { error } = await supabase
+    .from('todos')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', userId)
   if (error) throw error
 }
