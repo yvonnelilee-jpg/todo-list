@@ -11,6 +11,10 @@ export const DAY_END_HOUR = 19
 /** @typedef {'auto' | 'light' | 'dark'} ThemePreference */
 
 export const THEME_PREFERENCE_STORAGE_KEY = 'task-notebook-theme-preference'
+export const THEME_META_COLORS = {
+  light: '#0f0e0d',
+  dark: '#1e1c18',
+}
 
 /** @type {ThemePreference | null} */
 let preferenceCache = null
@@ -139,7 +143,7 @@ export function applyDocumentTheme() {
   }
   meta.setAttribute(
     'content',
-    theme === 'dark' ? '#1e1c18' : '#0f0e0d',
+    theme === 'dark' ? THEME_META_COLORS.dark : THEME_META_COLORS.light,
   )
 
   notifyThemeApplied()

@@ -1,0 +1,77 @@
+#app {
+  min-height: 100svh;
+  display: flex;
+  justify-content: center;
+  padding: clamp(24px, 4vw, 48px) clamp(16px, 3vw, 32px);
+}
+
+.notebook {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  max-width: 520px;
+  padding: clamp(28px, 5vw, 56px) clamp(48px, 8vw, 80px) clamp(72px, 10vw, 104px);
+  background-color: var(--notebook-paper);
+  border: none;
+  border-radius: var(--notebook-radius);
+  box-shadow:
+    inset 0 0 0 var(--notebook-border-w) var(--notebook-frame),
+    rgb(0 0 0 / 0.2) 0 24px 48px -20px,
+    rgb(0 0 0 / 0.08) 0 8px 16px -8px;
+}
+
+.notebook::before {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  inset: var(--notebook-border-w);
+  border-radius: max(6px, calc(var(--notebook-radius) - var(--notebook-border-w)));
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      var(--notebook-grid-line) 0 1px,
+      transparent 1px var(--notebook-grid-size)
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 calc(var(--notebook-grid-size) - 1px),
+      var(--notebook-grid-line) calc(var(--notebook-grid-size) - 1px) var(--notebook-grid-size)
+    );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 6%,
+    rgb(0 0 0 / 0.55) 38%,
+    rgb(0 0 0 / 0.12) 68%,
+    transparent 88%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 6%,
+    rgb(0 0 0 / 0.55) 38%,
+    rgb(0 0 0 / 0.12) 68%,
+    transparent 88%
+  );
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-repeat: no-repeat;
+  mask-size: 100% 100%;
+}
+
+.notebook-header,
+.notebook-main {
+  position: relative;
+  z-index: 1;
+}
+
+.notebook-header {
+  margin-bottom: var(--ui-grid);
+}
+
+.notebook-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-grid);
+}

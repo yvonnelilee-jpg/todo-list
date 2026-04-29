@@ -1,0 +1,38 @@
+/*
+ * Button size scale + hierarchy guide:
+ * - `l`: primary call-to-action
+ * - `m`: default interactive controls and icon buttons
+ * - `s`: compact secondary/close actions
+ * - `xs`: dense utility controls
+ */
+.btn-size-xs {
+  --btn-min-height: 32px;
+  --btn-pad-y: var(--space-3);
+  --btn-pad-x: var(--space-5);
+  --btn-font-size: var(--text-xs);
+  --btn-icon-size: 32px;
+}
+
+.btn-size-s {
+  --btn-min-height: 36px;
+  --btn-pad-y: var(--space-4);
+  --btn-pad-x: var(--space-6);
+  --btn-font-size: var(--text-sm);
+  --btn-icon-size: 36px;
+}
+
+.btn-size-m {
+  --btn-min-height: 44px;
+  --btn-pad-y: var(--space-5);
+  --btn-pad-x: var(--space-8);
+  --btn-font-size: var(--text-md);
+  --btn-icon-size: 44px;
+}
+
+.btn-size-l {
+  --btn-min-height: 48px;
+  --btn-pad-y: var(--space-6);
+  --btn-pad-x: var(--space-9);
+  --btn-font-size: 15px;
+  --btn-icon-size: 48px;
+}

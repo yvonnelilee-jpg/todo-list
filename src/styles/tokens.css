@@ -1,0 +1,127 @@
+:root {
+  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+
+  font: 17px/150% var(--sans);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+
+  /* Primitive scales */
+  --space-1: 2px;
+  --space-2: 4px;
+  --space-3: 6px;
+  --space-4: 8px;
+  --space-5: 10px;
+  --space-6: 12px;
+  --space-7: 14px;
+  --space-8: 16px;
+  --space-9: 18px;
+  --space-10: 20px;
+  --space-11: 22px;
+  --space-12: 24px;
+
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-md: 14px;
+  --text-lg: 16px;
+}
+
+/*
+ * Day (light) vs night (dark) from local time — see src/theme.js.
+ * Default tokens match `data-theme="light"` for progressive enhancement.
+ */
+:root,
+:root[data-theme='light'] {
+  color-scheme: light;
+  --paper: #faf7f0;
+  --paper-card: #fff9eb;
+  --ink: #3d3830;
+  --ink-muted: #6e665c;
+  --accent: #c45c26;
+  --accent-soft: rgba(196, 92, 38, 0.12);
+  --border: rgba(61, 56, 48, 0.12);
+  --shadow: rgba(61, 56, 48, 0.08) 0 8px 24px -6px;
+  --radius: var(--radius-lg);
+
+  /* Semantic aliases for components */
+  --surface-app: var(--paper);
+  --surface-card: var(--paper-card);
+  --text-primary: var(--ink);
+  --text-secondary: var(--ink-muted);
+  --border-default: var(--border);
+  --interactive-accent: var(--accent);
+  --interactive-accent-soft: var(--accent-soft);
+  --focus-ring-width: 2px;
+  --focus-ring-color: var(--accent);
+  --focus-ring-offset: 2px;
+
+  --control-radius: var(--radius-md);
+  --control-border: 1px solid var(--border-default);
+  --control-shadow: var(--shadow);
+  --control-hover-bg: var(--interactive-accent-soft);
+
+  --button-primary-bg: var(--interactive-accent);
+  --button-primary-text: var(--paper);
+  --button-primary-hover-brightness: 1.05;
+  --button-primary-shadow: none;
+
+  --tab-selected-color: var(--ink);
+  --tab-selected-accent: var(--accent);
+  --tab-selected-shadow:
+    2px 0 6px -2px rgb(0 0 0 / 0.12),
+    -2px 0 6px -2px rgb(0 0 0 / 0.12),
+    0 -2px 6px -3px rgb(0 0 0 / 0.08);
+
+  --checkbox-accent: var(--accent);
+  --todo-subtask-gradient-start: rgba(196, 92, 38, 0.12);
+
+  /* Framed graph-paper notebook */
+  --app-canvas: var(--paper-card);
+  --notebook-radius: clamp(18px, 3.2vw, 28px);
+  --notebook-border-w: clamp(10px, 1.8vw, 16px);
+  --notebook-frame: #cf3838;
+  --notebook-paper: #fdfcf8;
+  --notebook-grid-size: 22px;
+  --notebook-grid-line: rgba(100, 85, 78, 0.2);
+  --ui-grid: var(--notebook-grid-size);
+  --folder-panel-bg: #ffffff;
+  --modal-backdrop: rgb(0 0 0 / 0.28);
+
+  color: var(--text-primary);
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --paper: #1e1c18;
+  --paper-card: #2a2620;
+  --ink: #f3efe6;
+  --ink-muted: #b8b0a4;
+  --accent: #9f8268;
+  --accent-soft: rgba(159, 130, 104, 0.22);
+  --border: rgba(243, 239, 230, 0.12);
+  --shadow: rgba(0, 0, 0, 0.35) 0 10px 28px -8px;
+
+  --app-canvas: var(--paper);
+  --notebook-frame: #5c3538;
+  --notebook-paper: #26221c;
+  --notebook-grid-line: rgba(243, 239, 230, 0.06);
+  --folder-panel-bg: var(--paper-card);
+
+  --button-primary-bg: color-mix(in srgb, var(--accent) 88%, var(--paper-card));
+  --button-primary-hover-brightness: 1.06;
+  --button-primary-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04);
+  --tab-selected-color: color-mix(in srgb, var(--ink) 78%, var(--ink-muted));
+  --tab-selected-accent: color-mix(in srgb, var(--accent) 75%, var(--paper-card));
+  --tab-selected-shadow:
+    2px 0 8px -2px rgb(0 0 0 / 0.35),
+    -2px 0 8px -2px rgb(0 0 0 / 0.35),
+    0 -2px 6px -3px rgb(0 0 0 / 0.25);
+  --checkbox-accent: color-mix(in srgb, var(--accent) 82%, var(--paper-card));
+  --todo-subtask-gradient-start: rgba(232, 168, 124, 0.12);
+
+  color: var(--text-primary);
+}

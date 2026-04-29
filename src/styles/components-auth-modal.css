@@ -1,0 +1,101 @@
+.auth-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--space-8);
+  background: var(--modal-backdrop);
+  z-index: 30;
+}
+
+/* Author `display: grid` beats the UA `[hidden]` rule; without this, closing the modal does nothing visually. */
+.auth-modal-backdrop[hidden] {
+  display: none;
+}
+
+.auth-modal {
+  width: min(420px, 100%);
+  background: var(--notebook-paper);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  padding: var(--space-9);
+}
+
+.auth-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.auth-modal-title {
+  margin: 0;
+  font-size: 20px;
+}
+
+.auth-close {
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  border: var(--control-border);
+  background: var(--paper-card);
+  color: var(--ink);
+  border-radius: var(--control-radius);
+  width: var(--btn-icon-size, 36px);
+  height: var(--btn-icon-size, 36px);
+  cursor: pointer;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.auth-label {
+  font-size: var(--text-sm);
+  color: var(--ink-muted);
+}
+
+.auth-input {
+  min-height: 42px;
+  padding: var(--space-5) var(--space-6);
+  border-radius: var(--control-radius);
+  border: var(--control-border);
+  background: var(--paper-card);
+  color: var(--ink);
+  font: inherit;
+}
+
+.auth-input:focus-visible,
+.auth-close:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.auth-status {
+  min-height: 20px;
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-sm);
+  color: var(--ink-muted);
+}
+
+.auth-form-actions {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.auth-form-actions .quick-add-submit,
+.auth-form-actions .auth-btn {
+  min-height: var(--btn-min-height, 48px);
+  padding: var(--btn-pad-y, var(--space-6)) var(--btn-pad-x, var(--space-9));
+  font-size: var(--btn-font-size, inherit);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 0;
+}

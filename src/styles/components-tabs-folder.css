@@ -1,0 +1,188 @@
+.list-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-height: 0;
+}
+
+.notebook-tabs-shell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  margin-top: var(--space-4);
+}
+
+.notebook-folder-frame {
+  --folder-red-stroke: 2px;
+  --folder-edge-color: color-mix(in srgb, var(--notebook-frame) 45%, var(--notebook-paper));
+  border: none;
+  border-radius: var(--radius);
+  box-shadow:
+    inset 0 0 0 var(--folder-red-stroke) var(--folder-edge-color),
+    var(--shadow);
+  background: var(--folder-panel-bg);
+  overflow: visible;
+}
+
+.notebook-tabs-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0;
+  padding: var(--space-6) var(--space-6) 0;
+  position: relative;
+  z-index: 2;
+}
+
+.notebook-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0;
+  flex: 1;
+  min-width: 0;
+  padding-bottom: 0;
+}
+
+.notebook-tab-wrap {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  flex-shrink: 0;
+  margin-left: 0;
+}
+
+.notebook-tab-wrap:not(:first-child) {
+  margin-left: -14px;
+}
+
+.notebook-tab {
+  --tab-radius: 10px;
+  --tab-accent-band: 9px;
+  position: relative;
+  margin: 0;
+  padding: 0;
+  border: none;
+  cursor: pointer;
+  border-radius: 0;
+  background: transparent;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  min-height: var(--btn-min-height, 46px);
+  box-sizing: border-box;
+  color: var(--ink-muted);
+  transition:
+    color 0.15s ease,
+    box-shadow 0.2s ease;
+}
+
+.notebook-tab::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: var(--tab-radius) var(--tab-radius) 0 0;
+  background: var(--folder-panel-bg);
+  border: var(--folder-red-stroke) solid var(--folder-edge-color);
+  border-bottom: none;
+}
+
+.notebook-tab:hover {
+  color: var(--ink);
+}
+
+.notebook-tab:not([aria-selected='true']):hover::before {
+  border-color: color-mix(in srgb, var(--folder-edge-color) 70%, var(--ink-muted));
+}
+
+.notebook-tab[aria-selected='true'] {
+  z-index: 2;
+  color: var(--tab-selected-color);
+}
+
+.notebook-tab[aria-selected='true']::before {
+  bottom: 0;
+  background: var(--folder-panel-bg);
+  border-color: var(--folder-edge-color);
+  border-top-color: transparent;
+  box-shadow: var(--tab-selected-shadow);
+}
+
+.notebook-tab[aria-selected='true']::after {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: calc(var(--folder-red-stroke) + var(--tab-accent-band));
+  border-radius: var(--tab-radius) var(--tab-radius) 0 0;
+  background: var(--tab-accent, var(--tab-selected-accent));
+  pointer-events: none;
+}
+
+.notebook-tab[aria-selected='true'] .notebook-tab-label {
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.notebook-tab-label {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: var(--space-10) var(--space-11) var(--space-5);
+  max-width: min(46vw, 240px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 600 11px/1.25 var(--sans);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.notebook-tab:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: 4px;
+}
+
+.notebook-tab-panel {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  padding: 0;
+  background: var(--folder-panel-bg);
+  border: none;
+  border-radius: 0 0 calc(var(--radius) - var(--folder-red-stroke))
+    calc(var(--radius) - var(--folder-red-stroke));
+}
+
+.notebook-folder-inner {
+  padding: clamp(14px, 2.5vw, 20px);
+  border-radius: max(4px, calc(var(--radius) - 6px));
+  box-shadow: inset 0 0 0 var(--folder-red-stroke) var(--folder-edge-color);
+}
+
+.notebook-tab-panel.is-tab-animating .notebook-folder-inner {
+  animation: notebook-tab-panel-in 0.22s ease;
+}
+
+@keyframes notebook-tab-panel-in {
+  from {
+    opacity: 0.72;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
