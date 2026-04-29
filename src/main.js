@@ -308,11 +308,11 @@ async function mount() {
   }
 
   function syncAuthBar() {
-    const anonymous = isAnonymousUser(currentUser)
+    const anonymous = !currentUser || isAnonymousUser(currentUser)
     authCreateBtn.hidden = !anonymous
     authLoginBtn.hidden = !anonymous
     authLogoutBtn.hidden = anonymous
-    authUserLabel.textContent = anonymous ? 'Guest' : currentUser?.email || 'Signed in'
+    authUserLabel.textContent = anonymous ? 'Guest' : currentUser.email || 'Signed in'
   }
 
   async function reloadNotebookForCurrentUser() {
@@ -370,7 +370,9 @@ async function mount() {
     authLogoutBtn.disabled = true
     try {
       await signOutToAnonymousSession()
-      const user = await getCurrentUser()
+      const session = await ensureSession()
+      rememberAnonymousUser(session)
+      const user = session?.user ?? (await getCurrentUser())
       currentUser = user
       if (isAnonymousUser(user)) setStoredAnonymousUserId(user.id)
       syncAuthBar()
