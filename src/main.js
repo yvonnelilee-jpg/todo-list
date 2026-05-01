@@ -185,17 +185,36 @@ async function mount() {
       <main id="main" class="notebook-main">
         <form id="todo-form" class="quick-add" aria-label="Add a new task">
           <label class="sr-only" for="todo-input">Task title</label>
-          <input
-            id="todo-input"
-            name="title"
-            type="text"
-            class="quick-add-input"
-            placeholder="Write a task…"
-            autocomplete="off"
-            maxlength="500"
-            required
-          />
+          <div class="quick-add-input-wrap">
+            <input
+              id="todo-input"
+              name="title"
+              type="text"
+              class="quick-add-input"
+              placeholder="Write a task…"
+              autocomplete="off"
+              maxlength="500"
+              required
+            />
+            <button
+              type="button"
+              class="quick-add-mic"
+              id="todo-voice-btn"
+              aria-label="Add task using voice"
+              aria-pressed="false"
+              title="Speak task"
+              hidden
+            >
+              <svg class="quick-add-mic-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <rect x="9" y="3" width="6" height="11" rx="3" fill="none" stroke="currentColor" stroke-width="1.75" />
+                <path d="M6.5 11a5.5 5.5 0 0 0 11 0" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+                <path d="M12 16.5V21" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+                <path d="M9.5 21h5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+              </svg>
+            </button>
+          </div>
           <button type="submit" class="quick-add-submit btn-size-l">Add</button>
+          <p id="todo-voice-status" class="quick-add-voice-status" aria-live="polite"></p>
         </form>
 
         <div class="notebook-tabs-shell">
@@ -263,6 +282,10 @@ async function mount() {
     root.querySelector('#notebook-tab-panel')
   )
   const tabsEl = /** @type {HTMLElement} */ (root.querySelector('.notebook-tabs'))
+  const voiceBtn = /** @type {HTMLButtonElement} */ (
+    root.querySelector('#todo-voice-btn')
+  )
+  const voiceStatus = /** @type {HTMLElement} */ (root.querySelector('#todo-voice-status'))
   const themeAuto = /** @type {HTMLButtonElement} */ (root.querySelector('#theme-auto'))
   const themeDay = /** @type {HTMLButtonElement} */ (root.querySelector('#theme-day'))
   const themeNight = /** @type {HTMLButtonElement} */ (
@@ -363,6 +386,153 @@ async function mount() {
     themeDay.setAttribute('aria-pressed', pref === 'light' ? 'true' : 'false')
     themeNight.setAttribute('aria-pressed', pref === 'dark' ? 'true' : 'false')
   }
+
+  /** @type {SpeechRecognition | null} */
+  let voiceRecognition = null
+  let isVoiceListening = false
+  /** @type {ReturnType<typeof setTimeout> | null} */
+  let voiceStatusHideTimer = null
+
+  const VOICE_STATUS_LISTENING = 'Listening for a task title.'
+
+  /**
+   * @param {string} message
+   * @param {{ clearAfterMs?: number }} [options]
+   */
+  function setVoiceStatus(message, options = {}) {
+    const { clearAfterMs } = options
+    if (voiceStatusHideTimer) {
+      clearTimeout(voiceStatusHideTimer)
+      voiceStatusHideTimer = null
+    }
+    voiceStatus.textContent = message
+    if (clearAfterMs != null && clearAfterMs > 0) {
+      voiceStatusHideTimer = setTimeout(() => {
+        voiceStatus.textContent = ''
+        voiceStatusHideTimer = null
+      }, clearAfterMs)
+    }
+  }
+
+  function syncVoiceUi() {
+    voiceBtn.setAttribute('aria-pressed', isVoiceListening ? 'true' : 'false')
+    voiceBtn.classList.toggle('is-listening', isVoiceListening)
+    voiceBtn.title = isVoiceListening ? 'Stop listening' : 'Speak task'
+    voiceBtn.setAttribute('aria-label', isVoiceListening
+      ? 'Stop voice input'
+      : 'Add task using voice')
+  }
+
+  function stopVoiceRecognition() {
+    if (!voiceRecognition) return
+    if (!isVoiceListening) return
+    try {
+      voiceRecognition.stop()
+    } catch (error) {
+      console.warn('Voice recognition stop failed', error)
+    }
+  }
+
+  /**
+   * Request microphone permission so failures are explicit to users.
+   *
+   * @returns {Promise<boolean>}
+   */
+  async function ensureMicrophoneAccess() {
+    if (!navigator.mediaDevices?.getUserMedia) return true
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      for (const track of stream.getTracks()) track.stop()
+      return true
+    } catch (error) {
+      setVoiceStatus('Microphone blocked. Allow access in browser site settings.', {
+        clearAfterMs: 8000,
+      })
+      console.warn('Microphone permission denied', error)
+      return false
+    }
+  }
+
+  const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition
+  if (typeof SpeechRecognitionCtor === 'function') {
+    voiceBtn.hidden = false
+    voiceRecognition = new SpeechRecognitionCtor()
+    voiceRecognition.lang = navigator.language || 'en-US'
+    voiceRecognition.interimResults = false
+    voiceRecognition.continuous = false
+    voiceRecognition.maxAlternatives = 1
+
+    voiceRecognition.onstart = () => {
+      isVoiceListening = true
+      syncVoiceUi()
+      setVoiceStatus(VOICE_STATUS_LISTENING, { clearAfterMs: 20000 })
+    }
+
+    voiceRecognition.onresult = (event) => {
+      const phrase = event.results?.[0]?.[0]?.transcript?.trim() || ''
+      if (!phrase) return
+      const existing = input.value.trim()
+      input.value = existing ? `${existing} ${phrase}` : phrase
+      setVoiceStatus('Voice input added to task field.', { clearAfterMs: 3500 })
+      input.focus()
+    }
+
+    voiceRecognition.onnomatch = () => {
+      setVoiceStatus('No clear speech detected. Try again.', { clearAfterMs: 5500 })
+    }
+
+    voiceRecognition.onerror = (event) => {
+      if (event.error === 'aborted') {
+        setVoiceStatus('')
+        return
+      }
+      if (event.error === 'not-allowed') {
+        setVoiceStatus('Microphone denied. Allow it in browser site settings.', {
+          clearAfterMs: 8000,
+        })
+      } else if (event.error === 'no-speech') {
+        setVoiceStatus('No speech detected. Try again.', { clearAfterMs: 5500 })
+      } else if (event.error === 'network') {
+        setVoiceStatus(
+          'Voice could not reach the speech service. Check your connection or VPN, then try again.',
+          { clearAfterMs: 7000 },
+        )
+      } else {
+        setVoiceStatus(`Voice input failed (${event.error}). Try again.`, {
+          clearAfterMs: 6500,
+        })
+      }
+    }
+
+    voiceRecognition.onend = () => {
+      isVoiceListening = false
+      syncVoiceUi()
+      if (voiceStatus.textContent === VOICE_STATUS_LISTENING) {
+        setVoiceStatus('')
+      }
+    }
+
+    voiceBtn.addEventListener('click', async () => {
+      if (!voiceRecognition) return
+      if (isVoiceListening) {
+        stopVoiceRecognition()
+        return
+      }
+      setVoiceStatus('Starting microphone…', { clearAfterMs: 4000 })
+      const hasAccess = await ensureMicrophoneAccess()
+      if (!hasAccess) return
+      try {
+        voiceRecognition.start()
+      } catch (error) {
+        setVoiceStatus('Unable to start voice input.', { clearAfterMs: 6000 })
+        console.warn('Voice recognition start failed', error)
+      }
+    })
+  } else {
+    voiceBtn.hidden = true
+    voiceBtn.disabled = true
+  }
+  syncVoiceUi()
 
   syncThemeToolbar()
   onThemeApplied(syncThemeToolbar)
@@ -643,6 +813,7 @@ async function mount() {
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault()
+    stopVoiceRecognition()
     const title = input.value
     if (!title.trim()) return
     const ready = await ensureActiveTabReady()
@@ -732,6 +903,7 @@ async function mount() {
   })
 
   tabsEl.addEventListener('click', async (e) => {
+    stopVoiceRecognition()
     const tabBtn = /** @type {HTMLElement | null} */ (
       /** @type {HTMLElement} */ (e.target).closest('.notebook-tab')
     )
@@ -748,6 +920,10 @@ async function mount() {
 
   tabPanel.addEventListener('animationend', () => {
     tabPanel.classList.remove('is-tab-animating')
+  })
+
+  window.addEventListener('beforeunload', () => {
+    stopVoiceRecognition()
   })
 
   input.focus()

@@ -13,10 +13,9 @@
 
 ### **Phase 3: Nice to Have**
 
-1. **Ability to add in washi tape strips, stickers**, and pictures.
-2. Abilty to add quotes.
-3. **Priority Levels:** A simple "Star" or "High Priority" marker that changes the post-it color to a more vibrant hue.
-4. **Natural Language Processing (NLP):** Type "Buy milk tomorrow at 5pm" to automatically set a due date.
+1. Abilty to add quotes.
+2. **Priority Levels:** A simple "Star" or "High Priority" marker that changes the post-it color to a more vibrant hue.
+3. **Natural Language Processing (NLP):** users can click on the a microphone icon to activiate voice control to listen and add a task by speech
 
 ## **Some other ideas**
 

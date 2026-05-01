@@ -236,6 +236,7 @@
 
 .quick-add {
   display: flex;
+  flex-wrap: wrap;
   gap: calc(var(--ui-grid) / 2);
   align-items: stretch;
   min-width: 0;
@@ -243,12 +244,19 @@
   max-width: 100%;
 }
 
-.quick-add-input {
+.quick-add-input-wrap {
+  position: relative;
   flex: 1 1 0%;
   min-width: 0;
   max-width: 100%;
+}
+
+.quick-add-input {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   min-height: 48px;
-  padding: var(--space-6) var(--space-7);
+  padding: var(--space-6) calc(var(--space-7) + 40px) var(--space-6) var(--space-7);
   font: inherit;
   color: var(--ink);
   background: var(--paper-card);
@@ -281,6 +289,62 @@
   cursor: pointer;
   flex: 0 0 auto;
   box-shadow: var(--button-primary-shadow);
+}
+
+.quick-add-mic {
+  position: absolute;
+  top: 50%;
+  right: var(--space-3);
+  transform: translateY(-50%);
+  min-height: 36px;
+  min-width: 36px;
+  padding: 0;
+  margin: 0;
+  border: var(--control-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.quick-add-mic:hover {
+  color: var(--ink);
+  background: var(--control-hover-bg);
+}
+
+.quick-add-mic.is-listening,
+.quick-add-mic[aria-pressed='true'] {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+}
+
+.quick-add-mic-icon {
+  width: 18px;
+  height: 18px;
+  display: block;
+  margin: 0 auto;
+}
+
+.quick-add-mic:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.quick-add-mic[hidden] {
+  display: none;
+}
+
+.quick-add-voice-status {
+  flex: 1 0 100%;
+  margin: var(--space-2) 0 0;
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+  line-height: 1.25;
 }
 
 .quick-add-submit:focus-visible {
