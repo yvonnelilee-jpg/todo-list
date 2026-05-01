@@ -15,7 +15,6 @@
 
 .notebook-folder-frame {
   --folder-red-stroke: 2px;
-  --folder-edge-color: color-mix(in srgb, var(--notebook-frame) 45%, var(--notebook-paper));
   border: none;
   border-radius: var(--radius);
   box-shadow:

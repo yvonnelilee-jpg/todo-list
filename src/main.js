@@ -88,6 +88,24 @@ async function mount() {
   if (!root || !(template instanceof HTMLTemplateElement)) return
 
   root.innerHTML = `
+    <div class="auth-modal-backdrop" id="auth-modal-backdrop" hidden>
+      <div class="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
+        <div class="auth-modal-head">
+          <h2 id="auth-modal-title" class="auth-modal-title">Account</h2>
+          <button type="button" class="auth-close btn-size-s" id="auth-modal-close" aria-label="Close authentication dialog">×</button>
+        </div>
+        <form id="auth-form" class="auth-form">
+          <label class="auth-label" for="auth-email">Email</label>
+          <input id="auth-email" class="auth-input" type="email" required autocomplete="email" />
+          <label class="auth-label" for="auth-password">Password</label>
+          <input id="auth-password" class="auth-input" type="password" autocomplete="current-password" minlength="6" />
+          <p id="auth-status" class="auth-status" aria-live="polite"></p>
+          <div class="auth-form-actions">
+            <button type="submit" class="quick-add-submit btn-size-m" id="auth-submit-btn">Login</button>
+          </div>
+        </form>
+      </div>
+    </div>
     <div class="notebook">
       <header class="notebook-header">
         <div class="auth-strip">
@@ -205,24 +223,6 @@ async function mount() {
           </div>
         </div>
       </main>
-    </div>
-    <div class="auth-modal-backdrop" id="auth-modal-backdrop" hidden>
-      <div class="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
-        <div class="auth-modal-head">
-          <h2 id="auth-modal-title" class="auth-modal-title">Account</h2>
-          <button type="button" class="auth-close btn-size-s" id="auth-modal-close" aria-label="Close authentication dialog">×</button>
-        </div>
-        <form id="auth-form" class="auth-form">
-          <label class="auth-label" for="auth-email">Email</label>
-          <input id="auth-email" class="auth-input" type="email" required autocomplete="email" />
-          <label class="auth-label" for="auth-password">Password</label>
-          <input id="auth-password" class="auth-input" type="password" autocomplete="current-password" minlength="6" />
-          <p id="auth-status" class="auth-status" aria-live="polite"></p>
-          <div class="auth-form-actions">
-            <button type="submit" class="quick-add-submit btn-size-m" id="auth-submit-btn">Login</button>
-          </div>
-        </form>
-      </div>
     </div>
   `
 
