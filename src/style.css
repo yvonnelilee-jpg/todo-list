@@ -10,9 +10,12 @@
 .notebook {
   position: relative;
   isolation: isolate;
+  box-sizing: border-box;
   width: 100%;
   max-width: 520px;
-  padding: clamp(28px, 5vw, 56px) clamp(48px, 8vw, 80px) clamp(72px, 10vw, 104px);
+  min-width: 0;
+  padding: clamp(28px, 5vw, 56px) clamp(16px, 7vw, 80px)
+    clamp(72px, 10vw, 104px);
   background-color: var(--notebook-paper);
   /* Inset ring instead of border: thick border + radius often leaves corner gaps */
   border: none;
@@ -250,7 +253,9 @@
 
 .auth-strip .auth-toolbar-solo.auth-btn:hover {
   color: var(--ink);
-  background: var(--accent-soft);
+  /* Layer hover tint over card fill — matches `.theme-btn` on `.theme-toolbar` */
+  background:
+    linear-gradient(var(--accent-soft), var(--accent-soft)), var(--paper-card);
 }
 
 .auth-strip .auth-toolbar-solo.auth-btn:focus-visible {
@@ -359,16 +364,22 @@
   display: flex;
   flex-direction: column;
   gap: var(--ui-grid);
+  min-width: 0;
 }
 
 .quick-add {
   display: flex;
   gap: calc(var(--ui-grid) / 2);
   align-items: stretch;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
 }
 
 .quick-add-input {
-  flex: 1;
+  flex: 1 1 0%;
+  min-width: 0;
+  max-width: 100%;
   min-height: 48px;
   padding: 12px 14px;
   font: inherit;
@@ -391,7 +402,8 @@
 
 .quick-add-submit {
   min-height: var(--btn-min-height, 48px);
-  padding: var(--btn-pad-y, 12px) var(--btn-pad-x, 18px);
+  padding: var(--btn-pad-y, 12px)
+    clamp(12px, 2.5vw, var(--btn-pad-x, 18px));
   font: inherit;
   font-size: var(--btn-font-size, inherit);
   font-weight: 600;
@@ -400,7 +412,7 @@
   border: none;
   border-radius: var(--radius);
   cursor: pointer;
-  flex-shrink: 0;
+  flex: 0 0 auto;
 }
 
 .quick-add-submit:focus-visible {

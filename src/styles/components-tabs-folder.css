@@ -186,3 +186,32 @@
     transform: translateY(0);
   }
 }
+
+/*
+ * Narrow viewports: stacked overlapping tabs wrap into a messy second row.
+ * Prefer a single row + horizontal scroll (`.notebook` boosts specificity vs
+ * legacy duplicates in src/style.css).
+ */
+@media (max-width: 540px) {
+  .notebook .notebook-tabs-row {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: visible;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  .notebook .notebook-tabs {
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    width: max-content;
+    max-width: none;
+    min-width: max-content;
+  }
+
+  /* Shorter uppercase labels scroll away less often than 46vw caps */
+  .notebook .notebook-tab-label {
+    max-width: min(8.75rem, 38vw);
+  }
+}

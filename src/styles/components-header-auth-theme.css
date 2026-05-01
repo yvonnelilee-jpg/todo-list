@@ -127,7 +127,9 @@
 
 .auth-strip .auth-toolbar-solo.auth-btn:hover {
   color: var(--ink);
-  background: var(--control-hover-bg);
+  /* Layer hover tint over card fill — matches `.theme-btn` on `.theme-toolbar` */
+  background:
+    linear-gradient(var(--control-hover-bg), var(--control-hover-bg)), var(--paper-card);
 }
 
 .auth-strip .auth-toolbar-solo.auth-btn:focus-visible {
@@ -236,10 +238,15 @@
   display: flex;
   gap: calc(var(--ui-grid) / 2);
   align-items: stretch;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
 }
 
 .quick-add-input {
-  flex: 1;
+  flex: 1 1 0%;
+  min-width: 0;
+  max-width: 100%;
   min-height: 48px;
   padding: var(--space-6) var(--space-7);
   font: inherit;
@@ -262,7 +269,8 @@
 
 .quick-add-submit {
   min-height: var(--btn-min-height, 48px);
-  padding: var(--btn-pad-y, var(--space-6)) var(--btn-pad-x, var(--space-9));
+  padding: var(--btn-pad-y, var(--space-6))
+    clamp(var(--space-6), 2.5vw, var(--btn-pad-x, var(--space-9)));
   font: inherit;
   font-size: var(--btn-font-size, inherit);
   font-weight: 600;
@@ -271,7 +279,7 @@
   border: none;
   border-radius: var(--radius);
   cursor: pointer;
-  flex-shrink: 0;
+  flex: 0 0 auto;
   box-shadow: var(--button-primary-shadow);
 }
 
