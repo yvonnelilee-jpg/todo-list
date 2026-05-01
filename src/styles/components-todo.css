@@ -25,6 +25,10 @@
   box-shadow: var(--shadow);
 }
 
+.todo-list[hidden] {
+  display: none;
+}
+
 .todo-item {
   display: flex;
   align-items: center;
@@ -182,10 +186,28 @@
 
 .todo-empty {
   margin: 0;
-  padding: var(--space-8);
+  padding: var(--space-10) var(--space-8);
+  display: grid;
+  justify-items: center;
+  gap: var(--space-6);
   text-align: center;
   color: var(--ink-muted);
   background: var(--paper-card);
   border: 1px dashed var(--border);
   border-radius: var(--radius);
+}
+
+.todo-empty[hidden] {
+  display: none;
+}
+
+.todo-empty-illustration {
+  width: min(100%, 70px);
+  height: auto;
+  display: block;
+  color: var(--accent);
+}
+
+.todo-empty-copy {
+  display: block;
 }
