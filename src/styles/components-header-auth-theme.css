@@ -245,6 +245,8 @@
 }
 
 .quick-add-input-wrap {
+  --quick-add-mic-inset: var(--space-3);
+  --quick-add-mic-outer: 40px;
   position: relative;
   flex: 1 1 0%;
   min-width: 0;
@@ -256,7 +258,10 @@
   min-width: 0;
   max-width: 100%;
   min-height: 48px;
-  padding: var(--space-6) calc(var(--space-7) + 40px) var(--space-6) var(--space-7);
+  padding: var(--space-6)
+    calc(var(--quick-add-mic-inset) + var(--quick-add-mic-outer) + var(--space-6))
+    var(--space-6)
+    var(--space-7);
   font: inherit;
   color: var(--ink);
   background: var(--paper-card);
@@ -294,15 +299,17 @@
 .quick-add-mic {
   position: absolute;
   top: 50%;
-  right: var(--space-3);
+  right: var(--quick-add-mic-inset);
+  z-index: 2;
   transform: translateY(-50%);
-  min-height: 36px;
-  min-width: 36px;
+  box-sizing: border-box;
+  min-height: var(--quick-add-mic-outer);
+  min-width: var(--quick-add-mic-outer);
   padding: 0;
   margin: 0;
   border: var(--control-border);
   border-radius: 999px;
-  background: transparent;
+  background: var(--paper-card);
   color: var(--ink-muted);
   cursor: pointer;
   transition:
@@ -313,7 +320,7 @@
 
 .quick-add-mic:hover {
   color: var(--ink);
-  background: var(--control-hover-bg);
+  background: color-mix(in srgb, var(--control-hover-bg) 85%, var(--paper-card));
 }
 
 .quick-add-mic.is-listening,

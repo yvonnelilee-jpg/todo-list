@@ -368,6 +368,10 @@ async function mount() {
   }
 
   async function reloadNotebookForCurrentUser() {
+    // After sign-out, Supabase can briefly report no session. Loading tabs/todos
+    // calls getCurrentUserId() which throws without a user — skipping renderApp()
+    // leaves the previous account's tasks on screen until a full refresh.
+    await ensureSession()
     const initialTabs = await ensureDefaultTabs()
     notebook.tabs = initialTabs.map((t) => ({ id: t.id, label: t.label }))
     notebook.activeTabId = notebook.tabs[0]?.id ?? ''
@@ -566,9 +570,7 @@ async function mount() {
     authLogoutBtn.disabled = true
     try {
       await signOutToAnonymousSession()
-      const session = await ensureSession()
-      rememberAnonymousUser(session)
-      const user = session?.user ?? (await getCurrentUser())
+      const user = await getCurrentUser()
       currentUser = user
       if (isAnonymousUser(user)) setStoredAnonymousUserId(user.id)
       syncAuthBar()
