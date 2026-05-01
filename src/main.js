@@ -320,9 +320,6 @@ async function mount() {
     notebook.tabs = initialTabs.map((t) => ({ id: t.id, label: t.label }))
     notebook.activeTabId = notebook.tabs[0]?.id ?? ''
     notebook.todosByTabId = {}
-    for (const tab of notebook.tabs) {
-      notebook.todosByTabId[tab.id] = []
-    }
     if (notebook.activeTabId) {
       notebook.todosByTabId[notebook.activeTabId] = await loadTodosByTab(
         notebook.activeTabId,
@@ -510,7 +507,7 @@ async function mount() {
       const tabs = await ensureDefaultTabs()
       notebook.tabs = tabs.map((t) => ({ id: t.id, label: t.label }))
       notebook.activeTabId = notebook.tabs[0]?.id ?? ''
-      notebook.todosByTabId = Object.fromEntries(notebook.tabs.map((t) => [t.id, []]))
+      notebook.todosByTabId = {}
       if (notebook.activeTabId) {
         notebook.todosByTabId[notebook.activeTabId] = await loadTodosByTab(
           notebook.activeTabId,
